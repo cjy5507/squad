@@ -58,9 +58,19 @@ Agent(
     2. 파일 확장자별 언어 분류
     3. 테스트 파일 존재 여부
     4. 코드 난이도 시그널 (HIGH/MID/LOW)
-    5. 모듈 간 의존성 관계"
+    5. 모듈 간 의존성 관계
+    6. 프레임워크 감지 (import/using 문 기반)"
 )
-→ 결과: 에이전트 편성 + 모델 라우팅 결정에 사용
+→ 결과: 에이전트 편성 + 모델 라우팅 + 동적 체크리스트 결정에 사용
+```
+
+**동적 언어 규칙 주입:** Step 0에서 감지된 언어/프레임워크에 따라 [lang-rules.md](lang-rules.md)에서
+해당 규칙만 뽑아 에이전트 프롬프트에 자동 주입합니다.
+```
+감지: .sql 파일 → BugHunter에 [SQL] 규칙 추가, PerfTuner에 [SQL] 규칙 추가
+감지: .cs + EF Core → BugHunter에 [DOTNET]+[EFCORE] 규칙 추가
+감지: .java + Spring → BugHunter에 [JAVA]+[SPRING] 규칙 추가
+→ 에이전트 수는 그대로, 체크리스트만 동적으로 확장
 ```
 
 ### Step 1: 에이전트 편성
@@ -159,6 +169,9 @@ Agent(
 
 ## 분석 기준
 {에이전트별 체크리스트 — checklists.md 참조}
+
+## 언어별 추가 규칙 (Step 0 감지 기반, 동적 주입)
+{lang-rules.md에서 감지된 언어 태그의 해당 에이전트 규칙만 발췌}
 
 ## 위임 경계 (Defer-To)
 당신의 영역이 아닌 문제: `defer_to: {전문가명}` 표시, 직접 수정안 제시 금지.
@@ -361,6 +374,7 @@ react-pro.md, rust-sage.md, code-fixer.md
 
 ## 참고 문서
 
-- [체크리스트](checklists.md) — 에이전트별 상세 분석 기준
+- [체크리스트](checklists.md) — 에이전트별 기본 분석 기준
+- [언어 규칙](lang-rules.md) — 동적 주입용 언어/프레임워크별 추가 규칙 (SQL, .NET, Java, Python, Go, Spring, EF Core)
 - [전략 가이드](strategy-guide.md) — 배치 전략, 롤백 트리, 자기 교정 루프, Team 모드, AgentSpeak, PreCompact, Persistent Learning
 - [비용 가이드](cost-guide.md) — 비용 추적, 최적화, 모델 선택 전략
