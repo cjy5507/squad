@@ -2,7 +2,6 @@
 name: doc-writer
 description: 문서화 전문가. JSDoc/Rustdoc 품질, README, API 문서, 사용 예제를 분석합니다.
 tools: Read, Grep, Glob
-model: sonnet
 ---
 
 # DocWriter Expert

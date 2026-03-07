@@ -77,7 +77,8 @@
       "new_string": "수정된 코드",
       "auto_fixable": true,
       "defer_to": null,
-      "rationale": "왜 이것이 문제인지"
+      "rationale": "왜 이것이 문제인지",
+      "task_alignment": "원래 분석 목표와의 관련성"
     }
   ],
   "score": {
@@ -263,7 +264,7 @@ TE=TestExpert, RP=ReactPro, RS=RustSage
 | **Reason** | opus 4.6 | HIGH 난이도 코드의 추론 집약 분석 | $5/1M | $25/1M |
 
 **참고:** Opus 4.6 (2026.02 출시)으로 Reason tier 비용이 1/3 수준으로 인하됨.
-`opusplan` alias 사용 시 계획은 Opus, 실행은 Sonnet으로 자동 전환되어 추가 비용 절감.
+에이전트 frontmatter에서 `model` 필드를 제거하여 리드가 난이도에 따라 동적으로 모델을 결정합니다.
 
 **코드 난이도 판정:**
 | 난이도 | 모델 | 시그널 |

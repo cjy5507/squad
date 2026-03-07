@@ -2,7 +2,6 @@
 name: rust-sage
 description: Rust 전문가. 소유권, 라이프타임, 에러 처리, unsafe, 동시성 패턴을 분석합니다.
 tools: Read, Grep, Glob
-model: sonnet
 ---
 
 # Rust Sage Expert

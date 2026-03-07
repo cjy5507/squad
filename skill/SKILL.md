@@ -109,8 +109,6 @@ Gate 3: 파일 동시 수정 없음?   → NO: 파일 분배 또는 순차
 | **Execute** | sonnet 4.6 | 분석/구현/테스트 (대부분의 작업) | 3x |
 | **Reason** | opus 4.6 | HIGH 난이도 코드의 추론 집약 분석 | 5x |
 
-**`opusplan` alias:** 계획은 Opus, 실행은 Sonnet으로 자동 전환. Lead 조율에 최적.
-
 **난이도 판정 (Step 0에서 자동):**
 ```
 LOW/MID → sonnet: CRUD, 설정, 분기 8개 이하, 300줄 이하
@@ -122,7 +120,8 @@ HIGH → opus:     동시성, 제네릭/매크로, unsafe, 순환 복잡도 높�
 |-------------|----------|
 | CleanCode, TestExpert, ReactPro | Architect, BugHunter, PerfTuner, TypeGuard, RustSage |
 
-사용자 오버라이드: `--model sonnet|opus|haiku|opusplan`로 전원 강제 지정 가능.
+사용자 오버라이드: `--model sonnet|opus|haiku`로 전원 강제 지정 가능.
+에이전트 frontmatter에 model 필드가 없으므로 리드가 난이도에 따라 동적으로 모델을 결정합니다.
 
 ### Step 2: 에이전트 병렬 실행 — UPDATED
 
@@ -201,6 +200,15 @@ Agent(
 
 ### Step 3: 결과 통합 + 검증
 
+**3a-0. 에이전트 실패 처리:**
+```
+에이전트가 유효한 JSON을 반환하지 않거나 타임아웃 시:
+- JSON 파싱 실패 → 해당 에이전트 결과 제외 + 경고 표시
+- 타임아웃 → 해당 에이전트 결과 제외 + 경고 표시
+- 전체 에이전트 실패 시 → "분석 실패" 리포트 + 재시도 제안
+- 부분 실패(1명 이상 성공) → 성공한 에이전트 결과만으로 리포트 생성
+```
+
 **3a. Defer-To 재배치:** `defer_to` 항목을 해당 전문가 결과에 병합.
 
 **3b. 충돌 해소:** 같은 file:line → severity 높은 것 우선 → 병합 시도 → 사용자 선택.
@@ -210,6 +218,7 @@ Agent(
 각 에이전트 결과의 task_alignment 필드 확인:
 - 원래 분석 목표와 무관한 발견(scope creep) 필터링
 - 드리프트 비율 30% 이상 → 해당 에이전트 결과에 경고 표시
+- 단, severity: "critical" 발견은 드리프트와 무관하게 항상 보존 (안전성 우선)
 ```
 
 **3d. Critical Consensus:** — NEW
@@ -256,9 +265,10 @@ severity: "critical" 발견 시:
 Phase 1: 병렬 분석 (JSON 계약)
 → Phase 2: 배치 수정 (순차, 아래→위, Critical→Major→Minor)
 → Phase 3: 검증 (tsc/cargo/test, 실패 시 개별 롤백)
-→ Phase 4: 자기 교정 루프 (standard=2-pass, thorough=3-pass)
+→ Phase 4: 자기 교정 루프 (standard=2-pass, thorough=3-pass, maxIterations=pass×3)
 ```
 
+**안전장치:** maxIterations = requiredPasses × 3. 상한 도달 시 "자동 수정 불가, 수동 검토 필요"로 탈출.
 수정 전 검증: Read로 old_string 일치 확인 → 불일치 시 스킵.
 Overlooked Issues DB: 1차 놓침→2차 발견 패턴을 `.claude/squad-overlooked.md`에 축적.
 상세 알고리즘: [strategy-guide.md](strategy-guide.md) § 자기 교정 루프
@@ -336,12 +346,12 @@ A(분석) → B(수정, Critical시만) → C(TDD) → D(리팩토링, 승인 �
 - 복원: compaction 후 snapshot 파일이 존재하면 중단된 phase부터 자동 재개
 - 참고: 실제 사용 가능 컨텍스트는 ~120K tokens (200K 중 시스템 프롬프트/도구 정의 차감)
 
-**Persistent Learning (세션 간 학습):**
+**Persistent Learning (수동 관리 — 세션 간 학습):**
 - `.claude/squad-memory/` 디렉토리에 프로젝트별 학습 데이터 축적
-- `false-positives.md`: 반복 거부된 finding → 에이전트에 "무시할 패턴" 주입
-- `convention-overrides.md`: 프로젝트 특화 룰 오버라이드
-- `agent-effectiveness.md`: 에이전트별 정확도 추적
+- `false-positives.md`: `/squad reject {finding}` 명령으로 수동 등록 → 에이전트에 "무시할 패턴" 주입
+- `convention-overrides.md`: 사용자가 직접 편집하는 프로젝트 특화 룰 오버라이드
 - 초기화: `/squad init`으로 학습 디렉토리 생성
+- 참고: 자동 학습은 CLI 환경의 한계로 지원하지 않음. 수동 등록이 더 정확함
 
 상세 설정: [strategy-guide.md](strategy-guide.md) § PreCompact Hook / Persistent Learning
 

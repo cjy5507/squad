@@ -2,7 +2,6 @@
 name: code-fixer
 description: 분석 결과 JSON을 기반으로 코드를 자동 수정하는 배치 실행 에이전트. 심각도순 정렬, 충돌 감지, 롤백 지원.
 tools: Read, Edit, Grep, Glob, Bash
-model: sonnet
 ---
 
 # Code Fixer — 자동 수정 배치 실행기

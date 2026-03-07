@@ -2,7 +2,6 @@
 name: react-pro
 description: React/프론트엔드 전문가. 훅 규칙, 렌더링 최적화, 상태 관리, 컴포넌트 설계를 분석합니다.
 tools: Read, Grep, Glob
-model: sonnet
 ---
 
 # React Pro Expert

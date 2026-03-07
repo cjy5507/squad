@@ -49,9 +49,10 @@
 
 ### 전략 4: 모델 라우팅 최적화
 ```
-Lead: opusplan (계획은 opus, 실행은 sonnet 자동 전환)
+Lead: 난이도에 따라 동적 모델 선택 (에이전트 frontmatter에 model 고정 없음)
 Workers: sonnet (실행 — 대부분의 토큰)
 Explore: haiku (탐색 — 가장 저렴)
+Reason: opus (HIGH 난이도만 — Architect, BugHunter, PerfTuner 등)
 → 혼합 사용 시 전체 비용 ~30% 절감
 참고: Opus 4.6 가격 인하로 Reason tier 비용 부담이 크게 감소 ($5/$25)
 ```
