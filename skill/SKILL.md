@@ -285,31 +285,53 @@ Architect + CleanCode 주도. 항상 `isolation: "worktree"`에서 실행.
 
 ### 모드 Best: Auto-Pipeline (완전 자동)
 
-**사용자 개입 없이** 계획→실행→검증을 자동 진행합니다.
-서브에이전트가 fresh context를 제공하므로 수동 `/clear` 불필요.
+⚠️ **절대 중간에 멈추지 마라. 사용자 입력을 기다리지 마라.**
+⚠️ **Phase 1~5를 한 번의 실행으로 전부 완료하라.**
 
+**실행:** `/squad best src/target/`
+
+**Phase 1: Explore + Plan** — 서브에이전트가 계획을 **파일에 저장**
 ```
-Phase 1: Explore (haiku) — 코드 스캔, 에이전트 편성 결정
-  ↓ 자동 진행
-Phase 2: Plan (opus 서브에이전트) — 구현/수정 계획 수립
-  ↓ 사용자 확인 없이 바로 진행
-Phase 3: Execute (opus 병렬 서브에이전트) — 3-pass 분석 + 수정
-  ↓ 자동 진행
-Phase 4: Verify (빌드/테스트 실행, 실패 시 자기 교정)
-  ↓ 자동 진행
-Phase 5: Report — 최종 리포트 출력
+Agent(subagent_type: "Explore", prompt: "코드 구조 파악")
+→ 결과 기반으로 Plan 서브에이전트 실행:
+
+Agent(prompt: "분석 후 수정 계획을 .claude/squad-plan.json에 저장하라.
+  형식: [{file, changes: [{line, old_string, new_string, reason}]}]
+  코드를 수정하지 마라. 계획 파일만 작성.", mode: "plan")
+```
+→ 결과물: `.claude/squad-plan.json` (파일로 저장, 컨텍스트 소비 최소)
+
+**Phase 2: Clear + Execute** — 컨텍스트 정리 후 계획 파일 기반 실행
+```
+/compact "squad-plan.json 기반 실행 Phase"
+→ 계획 파일을 읽어서 실행 서브에이전트에게 전달:
+
+Agent(prompt: "Read .claude/squad-plan.json의 계획을 실행하라.
+  각 파일의 old_string을 Read로 확인 후 Edit으로 수정.
+  불일치 시 스킵.", mode: "acceptEdits")
 ```
 
-**핵심: 왜 수동 단계가 없는가?**
-- 각 Phase는 서브에이전트 = fresh context (컨텍스트 오염 없음)
-- Plan 결과를 리드가 메모리에 유지 → 다음 Phase에 주입
-- 검증 실패 시 자동 롤백 + 재시도 (maxIterations 이내)
-- **계획을 보여주고 멈추지 않음** — 전체 파이프라인 완료 후 결과만 리포트
+**Phase 3: Verify** — 빌드/테스트 자동 실행
+```
+빌드 명령 실행 (tsc, cargo check, go build 등)
+테스트 실행 (npm test, pytest 등)
+실패 시 → 자기 교정 서브에이전트 (squad-plan.json 참조, maxIterations=9)
+성공 시 → squad-plan.json 삭제 (cleanup)
+```
 
-**실행 방법:**
+**Phase 4: Report** — 최종 리포트만 출력
 ```
-/squad best src/hooks/    # 완전 자동: explore → plan → fix → verify → report
+## Auto-Pipeline 완료
+- 계획: N건 | 실행: X건 | 스킵: Y건
+- 검증: ✅ 빌드 / ✅ 테스트
+- 변경 파일: [파일별 1줄 요약]
 ```
+
+**핵심 설계 — 파일 기반 Phase Handoff:**
+- Plan → `.claude/squad-plan.json`에 저장 (컨텍스트에 남기지 않음)
+- Execute → 파일을 읽어서 실행 (Plan 토큰 재사용 없음)
+- `/compact` 후에도 계획 파일이 존재하므로 구현 가능
+- 사용자는 **최종 리포트만 확인** → `git diff`로 검토
 
 ### 모드 T: Team 모드 (대규모 병렬)
 
