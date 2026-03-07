@@ -286,52 +286,70 @@ Architect + CleanCode 주도. 항상 `isolation: "worktree"`에서 실행.
 ### 모드 Best: Auto-Pipeline (완전 자동)
 
 ⚠️ **절대 중간에 멈추지 마라. 사용자 입력을 기다리지 마라.**
-⚠️ **Phase 1~5를 한 번의 실행으로 전부 완료하라.**
+⚠️ **Phase 1~4를 한 번의 실행으로 전부 완료하라. "진행할까요?" 질문 금지.**
 
 **실행:** `/squad best src/target/`
 
-**Phase 1: Explore + Plan** — 서브에이전트가 계획을 **파일에 저장**
-```
-Agent(subagent_type: "Explore", prompt: "코드 구조 파악")
-→ 결과 기반으로 Plan 서브에이전트 실행:
+**서브에이전트 = 새 세션. /clear, /compact 불필요. 파일이 Phase 간 다리.**
 
-Agent(prompt: "분석 후 수정 계획을 .claude/squad-plan.json에 저장하라.
-  형식: [{file, changes: [{line, old_string, new_string, reason}]}]
-  코드를 수정하지 마라. 계획 파일만 작성.", mode: "plan")
+**Phase 1: Explore** — 코드 스캔 (haiku, ~500 토큰 리드 소비)
 ```
-→ 결과물: `.claude/squad-plan.json` (파일로 저장, 컨텍스트 소비 최소)
-
-**Phase 2: Clear + Execute** — 컨텍스트 정리 후 계획 파일 기반 실행
-```
-/compact "squad-plan.json 기반 실행 Phase"
-→ 계획 파일을 읽어서 실행 서브에이전트에게 전달:
-
-Agent(prompt: "Read .claude/squad-plan.json의 계획을 실행하라.
-  각 파일의 old_string을 Read로 확인 후 Edit으로 수정.
-  불일치 시 스킵.", mode: "acceptEdits")
+Agent(subagent_type: "Explore", prompt: "대상 파일 구조, 언어, 복잡도 파악.
+  결과를 1000자 이내 요약으로 반환.")
+→ 리드가 받는 것: 요약 텍스트만 (~500 tokens)
 ```
 
-**Phase 3: Verify** — 빌드/테스트 자동 실행
+**Phase 2: Plan** — 계획을 파일에 저장 (리드 컨텍스트 ~50 토큰만 소비)
 ```
-빌드 명령 실행 (tsc, cargo check, go build 등)
-테스트 실행 (npm test, pytest 등)
-실패 시 → 자기 교정 서브에이전트 (squad-plan.json 참조, maxIterations=9)
-성공 시 → squad-plan.json 삭제 (cleanup)
+Agent(prompt: "다음 코드를 분석하고 수정 계획을 작성하라.
+  대상: {Phase 1 요약의 파일 목록}
+
+  ⚠️ 소스 코드를 수정하지 마라. 계획 파일만 작성하라.
+
+  Write tool로 .claude/squad-plan.json에 저장:
+  [{\"file\": \"경로\", \"changes\": [{\"line\": N,
+    \"old_string\": \"현재코드\", \"new_string\": \"수정코드\",
+    \"reason\": \"이유\", \"severity\": \"critical|major|minor\"}]}]
+
+  리드에게는 이것만 반환: '계획 완료: N개 파일, M개 변경사항 (critical X, major Y)'
+  전체 계획 내용을 반환하지 마라. 파일에만 저장하라.",
+  mode: "acceptEdits")  # ⚠️ "plan" 모드 금지 — Write 권한 필요
+→ 리드가 받는 것: "계획 완료: 5개 파일, 12개 변경사항" (~50 tokens)
+→ 디스크에 생성됨: .claude/squad-plan.json
 ```
 
-**Phase 4: Report** — 최종 리포트만 출력
+**Phase 3: Execute** — 계획 파일을 읽어서 자동 실행
 ```
-## Auto-Pipeline 완료
-- 계획: N건 | 실행: X건 | 스킵: Y건
-- 검증: ✅ 빌드 / ✅ 테스트
-- 변경 파일: [파일별 1줄 요약]
+Agent(subagent_type: "code-fixer", prompt:
+  "Read .claude/squad-plan.json 파일을 읽어서 모든 변경사항을 실행하라.
+  수정 규칙은 너의 기본 룰(심각도순, 라인역순, old_string 검증)을 따르라.
+  완료 후 적용/스킵/실패 건수만 반환하라.",
+  mode: "acceptEdits")
+→ 리드가 받는 것: "적용 10건, 스킵 2건, 실패 0건" (~100 tokens)
 ```
 
-**핵심 설계 — 파일 기반 Phase Handoff:**
-- Plan → `.claude/squad-plan.json`에 저장 (컨텍스트에 남기지 않음)
-- Execute → 파일을 읽어서 실행 (Plan 토큰 재사용 없음)
-- `/compact` 후에도 계획 파일이 존재하므로 구현 가능
-- 사용자는 **최종 리포트만 확인** → `git diff`로 검토
+**Phase 4: Verify + Report** — 빌드/테스트 후 리포트
+```
+리드가 직접 Bash로 빌드/테스트 실행 (tsc, cargo check, npm test 등)
+실패 시 → Agent(subagent_type: "code-fixer", prompt: "빌드 에러 수정", mode: "acceptEdits")
+성공 시 → Bash("rm .claude/squad-plan.json")  # cleanup
+최종 리포트 출력
+```
+
+**왜 이 설계가 동작하는가:**
+```
+리드 컨텍스트 증가량:
+  Phase 1 Explore 요약:  ~500 tokens
+  Phase 2 Plan 요약:      ~50 tokens  (전체 계획은 파일에만 존재)
+  Phase 3 Execute 요약:  ~100 tokens  (code-fixer가 파일에서 직접 읽음)
+  Phase 4 Verify:        ~200 tokens
+  ─────────────────────────────────
+  총계:                  ~850 tokens  (리드 컨텍스트 거의 안 씀)
+
+각 서브에이전트 = fresh context = "새 세션"
+파일 = Phase 간 데이터 전달 (컨텍스트 아닌 디스크)
+/clear, /compact 불필요 = 완전 자동
+```
 
 ### 모드 T: Team 모드 (대규모 병렬)
 
