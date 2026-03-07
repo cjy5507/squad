@@ -2,6 +2,29 @@
 
 통합 출처: agent_farm(락/하트비트), dev-workflows(자기교정/JSON계약), claude-pipeline(3-gate/defer-to/2단계리뷰)
 리서치 출처: ruflo(anti-drift/consensus), kieranklaassen gist(swarm patterns), Reddit/커뮤니티 베스트프랙티스
+Anthropic 공식: [Context Engineering](https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents), [Skill Best Practices](https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices)
+
+## Context Engineering 원칙 (Anthropic 공식)
+
+Squad의 모든 설계는 다음 5대 원칙에 기반합니다:
+
+| 원칙 | 설명 | Squad 적용 |
+|------|------|-----------|
+| **Treat Context as Finite** | 토큰 증가 → 성능 저하 (context rot) | 에이전트 프롬프트에 파일 경로만 전달, 체크리스트는 해당 에이전트 것만 |
+| **Right Altitude** | 구체적이되 유연한 지침 | 체크리스트는 what을 정의, how는 에이전트 재량 |
+| **Minimal Viable Tools** | 도구는 자명하고 비중첩 | 분석 에이전트: Read,Grep,Glob만. 수정: code-fixer만 |
+| **Strategic Retrieval** | Just-in-time으로 데이터 로드 | Step 0 Explore → 필요한 것만 Step 2에서 로드 |
+| **Long-Horizon Techniques** | 컴팩션, 노트, 멀티에이전트 | 서브에이전트 격리, /compact, Persistent Learning |
+
+## Degree of Freedom 가이드 (Anthropic 공식)
+
+에이전트 프롬프트의 자유도를 작업 유형에 맞게 조절합니다:
+
+| 자유도 | 적용 대상 | 프롬프트 스타일 | Squad 예시 |
+|--------|----------|---------------|-----------|
+| **High** (텍스트) | 다양한 접근이 유효한 분석 | 일반 방향만 제시 | 모드 A 코드 리뷰 |
+| **Medium** (의사코드) | 패턴은 있지만 변형 허용 | 선호 패턴 + 재량 | 모드 C TDD 생성 |
+| **Low** (정확한 스크립트) | 취약하고 순서 중요한 작업 | 단계별 정확한 지시 | 모드 B Auto-Fix 배치 수정 |
 
 ## 병렬 에이전트 실행 방식 비교
 

@@ -1,6 +1,7 @@
 ---
 name: squad
-description: 병렬 전문가 에이전트 스쿼드를 자율 생성하여 코드 품질 분석, 클린코드, TDD, QA, 아키텍처 리뷰를 동시 수행. Use when user mentions squad, 스쿼드, 전문가 에이전트, 병렬 분석, code quality audit, parallel agents, 코드 품질, clean code review, or wants comprehensive multi-expert code analysis.
+description: Deploys parallel specialist agents to autonomously analyze code quality, clean code, TDD, QA, and architecture in parallel. Use when user mentions squad, 스쿼드, 전문가 에이전트, 병렬 분석, code quality audit, parallel agents, 코드 품질, clean code review, or wants comprehensive multi-expert code analysis.
+argument-hint: "[mode] [target-path] [--options]"
 ---
 
 # Code Squad v3 — 병렬 전문가 에이전트 오케스트레이터
@@ -9,17 +10,18 @@ description: 병렬 전문가 에이전트 스쿼드를 자율 생성하여 코�
 
 ## 핵심 원칙
 
-1. **Explore → Plan → Execute** — haiku 탐색 → 편성 계획 → 전문가 병렬 실행
-2. **3-Gate 병렬 판단** — 병렬/직렬을 의사결정 트리로 판단
-3. **컨텍스트 격리** — 각 서브에이전트는 fresh context, 편향 없는 분석
-4. **JSON 계약** — 에이전트 간 결과는 구조화된 JSON으로 전달
-5. **자기 교정 루프** — N회 연속 통과 게이트로 수정 품질 보장
-6. **명시적 위임 경계** — 자기 영역 외 작업은 `defer_to`로 위임
-7. **정적 모델 라우팅** — agent frontmatter `model: sonnet` 기반, Explore는 빌트인(haiku)
-8. **Anti-Drift 검증** — 에이전트 결과가 원래 목표에서 벗어나는지 검증
-9. **Critical Consensus** — critical 발견은 교차 검증으로 확정
-10. **AgentSpeak 프로토콜** — Team 모드 에이전트 간 토큰 효율 통신
-11. **Persistent Learning** — `/squad reject`로 오탐 수동 등록, 세션 간 정밀도 향상
+1. **Context Engineering** — 컨텍스트는 유한 자원. 최소한의 고신호 토큰으로 최대 결과 도출 (Anthropic 공식 권장)
+2. **Explore → Plan → Execute** — haiku 탐색 → 편성 계획 → 전문가 병렬 실행
+3. **3-Gate 병렬 판단** — 병렬/직렬을 의사결정 트리로 판단
+4. **컨텍스트 격리** — 각 서브에이전트는 fresh context, 편향 없는 분석
+5. **JSON 계약** — 에이전트 간 결과는 구조화된 JSON으로 전달
+6. **자기 교정 루프** — N회 연속 통과 게이트로 수정 품질 보장
+7. **명시적 위임 경계** — 자기 영역 외 작업은 `defer_to`로 위임
+8. **정적 모델 라우팅** — agent frontmatter `model: sonnet` 기반, Explore는 빌트인(haiku)
+9. **Anti-Drift 검증** — 에이전트 결과가 원래 목표에서 벗어나는지 검증
+10. **Critical Consensus** — critical 발견은 교차 검증으로 확정
+11. **AgentSpeak 프로토콜** — Team 모드 에이전트 간 토큰 효율 통신
+12. **Persistent Learning** — `/squad reject`로 오탐 수동 등록, 세션 간 정밀도 향상
 
 ## 전문가 에이전트 로스터
 
@@ -45,7 +47,7 @@ description: 병렬 전문가 에이전트 스쿼드를 자율 생성하여 코�
 
 ## 실행 전략
 
-### Step 0: Quick Explore (haiku 사전 탐색) — NEW
+### Step 0: Quick Explore (haiku 사전 탐색)
 
 본격 분석 전, Explore 에이전트(haiku)로 코드베이스를 빠르게 스캔합니다.
 sonnet 대비 비용 1/10, 탐색에 최적.
@@ -82,7 +84,7 @@ Step 0 결과 기반으로 투입 에이전트를 결정합니다.
 - `.rs` → RustSage | `*.test.*`/`*.spec.*` → TestExpert
 - 루프/쿼리/API 다수 → PerfTuner | 공개 API/export → DocWriter
 
-**적응형 에이전트 수 (Quick Scan 최적화):** — NEW
+**적응형 에이전트 수 (Quick Scan 최적화):**
 ```
 파일 1~2개 + 100줄 이하 → 단일 에이전트 (가장 관련 높은 1명)
 파일 3~5개             → Core 2명 (CleanCode + BugHunter)
@@ -115,7 +117,7 @@ Agent tool에 `model` 파라미터가 없으므로 **동적 모델 선택은 불
 - 모든 커스텀 에이전트는 `model: sonnet`으로 설정됨 (비용 효율)
 - Opus가 필요하면 해당 agent `.md` 파일의 frontmatter를 `model: opus`로 수정
 
-### Step 2: 에이전트 병렬 실행 — UPDATED
+### Step 2: 에이전트 병렬 실행
 
 **반드시 Agent tool을 사용하여 병렬 호출합니다.**
 
@@ -141,7 +143,7 @@ Agent(
 | `isolation: "worktree"` | git worktree 격리 | 모드 D (리팩토링) |
 | `resume` | 이전 에이전트 재개 | 자기 교정 루프 시 |
 
-**Overlooked DB 프리로딩:** — NEW
+**Overlooked DB 프리로딩:**
 `.claude/squad-overlooked.md`가 존재하면 에이전트 프롬프트 상단에 주입:
 ```
 ## 이전 놓친 패턴 (이 카테고리)
@@ -207,7 +209,7 @@ Agent(
 
 **3b. 충돌 해소:** 같은 file:line → severity 높은 것 우선 → 병합 시도 → 사용자 선택.
 
-**3c. Anti-Drift 검증:** — NEW
+**3c. Anti-Drift 검증:**
 ```
 각 에이전트 결과의 task_alignment 필드 확인:
 - 원래 분석 목표와 무관한 발견(scope creep) 필터링
@@ -215,7 +217,7 @@ Agent(
 - 단, severity: "critical" 발견은 드리프트와 무관하게 항상 보존 (안전성 우선)
 ```
 
-**3d. Critical Consensus:** — NEW
+**3d. Critical Consensus:**
 ```
 severity: "critical" 발견 시:
 1. 원래 발견한 에이전트가 아닌 다른 전문가 1명에게 교차 검증
@@ -331,13 +333,14 @@ A(분석) → B(수정, Critical시만) → C(TDD) → D(리팩토링, 승인 �
 
 상세 비용/최적화 전략: [cost-guide.md](cost-guide.md)
 
-## 컨텍스트 보호 + Persistent Learning
+## Context Engineering + Persistent Learning
 
-**컨텍스트 보호:**
-- 분석 시작 전 `/compact`로 컨텍스트 정리 권장
+**컨텍스트 관리 (Anthropic 공식 권장):**
+- 분석 시작 전 `/clear`로 무관한 컨텍스트 제거, `/compact`로 핵심만 유지
+- 탐색/리서치는 서브에이전트에 위임 → 메인 컨텍스트 오염 방지
 - `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE=80` 설정으로 조기 컴팩션
+- 에이전트 프롬프트에 파일 경로만 전달 (전체 코드 X) → just-in-time retrieval
 - 참고: 실제 사용 가능 컨텍스트는 ~120K tokens (200K 중 시스템 프롬프트/도구 정의 차감)
-- ⚠️ PreCompact hook은 존재하지 않음. 유효한 hook: PreToolUse, PostToolUse, SessionStart, SessionEnd, UserPromptSubmit, SubagentStart, SubagentStop
 
 **Persistent Learning (수동 관리 — 세션 간 학습):**
 - `.claude/squad-memory/` 디렉토리에 프로젝트별 학습 데이터 축적
@@ -381,3 +384,10 @@ react-pro.md, rust-sage.md, doc-writer.md, code-fixer.md
 - [언어 규칙](lang-rules.md) — 동적 주입용 언어/프레임워크별 추가 규칙 (SQL, .NET, Java, Python, Go, Spring, EF Core)
 - [전략 가이드](strategy-guide.md) — 배치 전략, 롤백 트리, 자기 교정 루프, Team 모드, AgentSpeak, Persistent Learning
 - [비용 가이드](cost-guide.md) — 비용 추적, 최적화, 모델 선택 전략
+
+## 설계 원칙 출처
+
+본 스킬은 다음 Anthropic 공식 가이드라인에 기반합니다:
+- [Effective Context Engineering for AI Agents](https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents) — 컨텍스트 유한성, just-in-time retrieval, minimal viable tools
+- [Skill Authoring Best Practices](https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices) — progressive disclosure, 500줄 제한, degree of freedom
+- [Claude Code Best Practices](https://code.claude.com/docs/en/best-practices) — /clear, /compact, 서브에이전트 위임, verification loops
