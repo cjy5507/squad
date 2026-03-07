@@ -283,6 +283,34 @@ Phase 4: Quality 리뷰 → Phase 5: 실행 + 자기 교정
 Architect + CleanCode 주도. 항상 `isolation: "worktree"`에서 실행.
 게이트: 원래 작업 완료 + 테스트 통과 + 사용자 명시 요청.
 
+### 모드 Best: Auto-Pipeline (완전 자동)
+
+**사용자 개입 없이** 계획→실행→검증을 자동 진행합니다.
+서브에이전트가 fresh context를 제공하므로 수동 `/clear` 불필요.
+
+```
+Phase 1: Explore (haiku) — 코드 스캔, 에이전트 편성 결정
+  ↓ 자동 진행
+Phase 2: Plan (opus 서브에이전트) — 구현/수정 계획 수립
+  ↓ 사용자 확인 없이 바로 진행
+Phase 3: Execute (opus 병렬 서브에이전트) — 3-pass 분석 + 수정
+  ↓ 자동 진행
+Phase 4: Verify (빌드/테스트 실행, 실패 시 자기 교정)
+  ↓ 자동 진행
+Phase 5: Report — 최종 리포트 출력
+```
+
+**핵심: 왜 수동 단계가 없는가?**
+- 각 Phase는 서브에이전트 = fresh context (컨텍스트 오염 없음)
+- Plan 결과를 리드가 메모리에 유지 → 다음 Phase에 주입
+- 검증 실패 시 자동 롤백 + 재시도 (maxIterations 이내)
+- **계획을 보여주고 멈추지 않음** — 전체 파이프라인 완료 후 결과만 리포트
+
+**실행 방법:**
+```
+/squad best src/hooks/    # 완전 자동: explore → plan → fix → verify → report
+```
+
 ### 모드 T: Team 모드 (대규모 병렬)
 
 Agent Teams로 독립 Claude Code 세션 병렬 실행.
@@ -309,7 +337,7 @@ DONE: TM1 → LEAD | files:5 findings:3C,5M score:7/10
 |--------|------|
 | "분석", "리뷰", "체크" | A (분석) |
 | "수정", "고쳐", "fix", "auto" | B (Auto-Fix, 2-pass, sonnet) |
-| "best", "최고", "max", "pro" | B (Auto-Fix, 3-pass, opus) — `--thorough --model opus` 자동 적용 |
+| "best", "최고", "max", "pro" | **Auto-Pipeline** (아래 참조) — 계획→실행→검증 완전 자동 |
 | "테스트", "TDD", "커버리지" | C (TDD) |
 | "리팩토링", "정리", "refactor" | D (리팩토링) |
 | "team", "팀", "병렬 구현", "대규모" | T (Team) |
@@ -357,7 +385,7 @@ A(분석) → B(수정, Critical시만) → C(TDD) → D(리팩토링, 승인 �
 ```
 /squad src/hooks/                           # 분석 (자동 편성)
 /squad fix src/hooks/                       # Auto-Fix (2-pass, sonnet)
-/squad best src/hooks/                      # 최고 품질 (3-pass, opus)
+/squad best src/hooks/                      # 완전 자동 파이프라인 (3-pass, opus)
 /squad fix --thorough src/hooks/            # Auto-Fix (3-pass, sonnet)
 /squad fix --experts CleanCode,BugHunter .  # 특정 전문가만
 /squad tdd src/components/                  # TDD 생성
