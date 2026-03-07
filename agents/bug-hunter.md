@@ -2,6 +2,7 @@
 name: bug-hunter
 description: 잠재 버그 및 보안 취약점 헌터. 엣지케이스, 에러 핸들링, 경쟁 조건, 보안 결함을 탐지합니다.
 tools: Read, Grep, Glob
+model: sonnet
 ---
 
 # Bug Hunter

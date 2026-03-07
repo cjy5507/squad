@@ -2,6 +2,7 @@
 name: architect-expert
 description: 소프트웨어 아키텍처 분석 전문가. 의존성, 레이어 분리, SOLID, 결합도/응집도를 검사합니다.
 tools: Read, Grep, Glob
+model: sonnet
 ---
 
 # Architect Expert

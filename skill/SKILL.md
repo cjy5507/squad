@@ -15,11 +15,11 @@ description: 병렬 전문가 에이전트 스쿼드를 자율 생성하여 코�
 4. **JSON 계약** — 에이전트 간 결과는 구조화된 JSON으로 전달
 5. **자기 교정 루프** — N회 연속 통과 게이트로 수정 품질 보장
 6. **명시적 위임 경계** — 자기 영역 외 작업은 `defer_to`로 위임
-7. **3-Tier 모델 라우팅** — haiku(탐색) / sonnet(실행) / opus(고난이도)
+7. **정적 모델 라우팅** — agent frontmatter `model: sonnet` 기반, Explore는 빌트인(haiku)
 8. **Anti-Drift 검증** — 에이전트 결과가 원래 목표에서 벗어나는지 검증
 9. **Critical Consensus** — critical 발견은 교차 검증으로 확정
-10. **AgentSpeak 프로토콜** — Team 모드 에이전트 간 토큰 효율 통신 (60-70% 절감)
-11. **Persistent Learning** — 세션 간 학습으로 분석 정밀도 점진 향상
+10. **AgentSpeak 프로토콜** — Team 모드 에이전트 간 토큰 효율 통신
+11. **Persistent Learning** — `/squad reject`로 오탐 수동 등록, 세션 간 정밀도 향상
 
 ## 전문가 에이전트 로스터
 
@@ -99,29 +99,21 @@ Gate 3: 파일 동시 수정 없음?   → NO: 파일 분배 또는 순차
 → 모든 Gate 통과: 병렬 실행
 ```
 
-### Step 1.6: 3-Tier 모델 라우팅 — UPDATED
+### Step 1.6: 정적 모델 라우팅
 
-**에이전트 역할 x 코드 난이도** 조합으로 자동 결정합니다.
+Agent tool에 `model` 파라미터가 없으므로 **동적 모델 선택은 불가능**합니다.
+모델은 agent `.md` frontmatter의 `model` 필드로 정적 지정됩니다.
 
-| Tier | 모델 | 용도 | 비용 비율 |
-|------|------|------|----------|
-| **Explore** | haiku 4.5 | 코드 탐색, 파일 스캔, 구조 파악 | 1x |
-| **Execute** | sonnet 4.6 | 분석/구현/테스트 (대부분의 작업) | 3x |
-| **Reason** | opus 4.6 | HIGH 난이도 코드의 추론 집약 분석 | 5x |
+| 계층 | 모델 | 설정 방법 | 용도 |
+|------|------|----------|------|
+| **Explore** | haiku | 빌트인 (자동) | 코드 탐색, 파일 스캔 |
+| **분석 에이전트** | sonnet | frontmatter `model: sonnet` | 분석/구현 (대부분) |
+| **Opus 승격** | opus | 사용자가 agent frontmatter 수정 | 고난이도 코드 |
 
-**난이도 판정 (Step 0에서 자동):**
-```
-LOW/MID → sonnet: CRUD, 설정, 분기 8개 이하, 300줄 이하
-HIGH → opus:     동시성, 제네릭/매크로, unsafe, 순환 복잡도 높음, 300줄+
-```
-
-**에이전트별 HIGH 오버라이드:**
-| sonnet 유지 | opus 승격 |
-|-------------|----------|
-| CleanCode, TestExpert, ReactPro | Architect, BugHunter, PerfTuner, TypeGuard, RustSage |
-
-사용자 오버라이드: `--model sonnet|opus|haiku`로 전원 강제 지정 가능.
-에이전트 frontmatter에 model 필드가 없으므로 리드가 난이도에 따라 동적으로 모델을 결정합니다.
+**제약사항:**
+- 호출 시점에 모델을 동적으로 변경할 수 없음 (Agent tool API 한계)
+- 모든 커스텀 에이전트는 `model: sonnet`으로 설정됨 (비용 효율)
+- Opus가 필요하면 해당 agent `.md` 파일의 frontmatter를 `model: opus`로 수정
 
 ### Step 2: 에이전트 병렬 실행 — UPDATED
 
@@ -144,7 +136,7 @@ Agent(
 |---------|------|----------|
 | `subagent_type` | 사전 정의 에이전트 선택 | 항상 (agents/ 파일 활용) |
 | `run_in_background` | 비동기 병렬 실행 | 3명 이상 동시 실행 시 |
-| `mode: "plan"` | 읽기 전용 분석 | 모드 A (분석) |
+| `mode: "plan"` | 분석 모드 (⚠️ 실제 tool 차단 아님, Hook 필요) | 모드 A (분석) |
 | `mode: "acceptEdits"` | 수정 허용 | 모드 B (Auto-Fix) |
 | `isolation: "worktree"` | git worktree 격리 | 모드 D (리팩토링) |
 | `resume` | 이전 에이전트 재개 | 자기 교정 루프 시 |
@@ -207,6 +199,8 @@ Agent(
 - 타임아웃 → 해당 에이전트 결과 제외 + 경고 표시
 - 전체 에이전트 실패 시 → "분석 실패" 리포트 + 재시도 제안
 - 부분 실패(1명 이상 성공) → 성공한 에이전트 결과만으로 리포트 생성
+⚠️ LLM은 JSON을 markdown fence(```)로 감쌀 수 있음 — 파싱 시 fence 제거 필요
+⚠️ 서브에이전트는 중첩 불가 (2-tier 최대: 리드 → 서브에이전트)
 ```
 
 **3a. Defer-To 재배치:** `defer_to` 항목을 해당 전문가 결과에 병합.
@@ -291,7 +285,7 @@ Architect + CleanCode 주도. 항상 `isolation: "worktree"`에서 실행.
 
 Agent Teams로 독립 Claude Code 세션 병렬 실행.
 각 teammate는 **독립 컨텍스트 + 직접 소통 + 공유 태스크 리스트**.
-에이전트 간 통신은 **AgentSpeak 프로토콜**로 토큰 60-70% 절감.
+에이전트 간 통신은 **AgentSpeak 프로토콜**로 토큰 효율 통신.
 
 **AgentSpeak 핵심 형식:**
 ```
@@ -342,9 +336,8 @@ A(분석) → B(수정, Critical시만) → C(TDD) → D(리팩토링, 승인 �
 **컨텍스트 보호:**
 - 분석 시작 전 `/compact`로 컨텍스트 정리 권장
 - `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE=80` 설정으로 조기 컴팩션
-- **`PreCompact` hook** — 컴팩션 직전에 Squad 상태를 `.claude/squad-state-snapshot.md`에 자동 저장
-- 복원: compaction 후 snapshot 파일이 존재하면 중단된 phase부터 자동 재개
 - 참고: 실제 사용 가능 컨텍스트는 ~120K tokens (200K 중 시스템 프롬프트/도구 정의 차감)
+- ⚠️ PreCompact hook은 존재하지 않음. 유효한 hook: PreToolUse, PostToolUse, SessionStart, SessionEnd, UserPromptSubmit, SubagentStart, SubagentStop
 
 **Persistent Learning (수동 관리 — 세션 간 학습):**
 - `.claude/squad-memory/` 디렉토리에 프로젝트별 학습 데이터 축적
@@ -353,7 +346,7 @@ A(분석) → B(수정, Critical시만) → C(TDD) → D(리팩토링, 승인 �
 - 초기화: `/squad init`으로 학습 디렉토리 생성
 - 참고: 자동 학습은 CLI 환경의 한계로 지원하지 않음. 수동 등록이 더 정확함
 
-상세 설정: [strategy-guide.md](strategy-guide.md) § PreCompact Hook / Persistent Learning
+상세 설정: [strategy-guide.md](strategy-guide.md) § Persistent Learning
 
 ## 사용 예시
 
@@ -377,7 +370,7 @@ A(분석) → B(수정, Critical시만) → C(TDD) → D(리팩토링, 승인 �
 ```
 clean-code-expert.md, architect-expert.md, bug-hunter.md,
 test-expert.md, perf-tuner.md, type-guard.md,
-react-pro.md, rust-sage.md, code-fixer.md
+react-pro.md, rust-sage.md, doc-writer.md, code-fixer.md
 ```
 분석 에이전트: `tools: Read, Grep, Glob` (읽기 전용)
 수정 에이전트: code-fixer.md → `tools: Read, Edit, Grep, Glob, Bash`
@@ -386,5 +379,5 @@ react-pro.md, rust-sage.md, code-fixer.md
 
 - [체크리스트](checklists.md) — 에이전트별 기본 분석 기준
 - [언어 규칙](lang-rules.md) — 동적 주입용 언어/프레임워크별 추가 규칙 (SQL, .NET, Java, Python, Go, Spring, EF Core)
-- [전략 가이드](strategy-guide.md) — 배치 전략, 롤백 트리, 자기 교정 루프, Team 모드, AgentSpeak, PreCompact, Persistent Learning
+- [전략 가이드](strategy-guide.md) — 배치 전략, 롤백 트리, 자기 교정 루프, Team 모드, AgentSpeak, Persistent Learning
 - [비용 가이드](cost-guide.md) — 비용 추적, 최적화, 모델 선택 전략

@@ -2,6 +2,7 @@
 name: clean-code-expert
 description: 클린코드 원칙 기반 코드 분석 전문가. 네이밍, 함수 크기, SRP, DRY, KISS, 복잡도를 체계적으로 검사합니다.
 tools: Read, Grep, Glob
+model: sonnet
 ---
 
 # CleanCode Expert

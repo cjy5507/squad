@@ -8,7 +8,7 @@
 ### 방식 1: Agent Tool 서브에이전트 (권장 — 분석/리뷰)
 
 ```
-장점: 즉시 병렬, 결과 자동 수집, 모델별 지정, 설정 불필요
+장점: 즉시 병렬, 결과 자동 수집, frontmatter 모델 지정, 설정 불필요
 단점: 메인 컨텍스트 내 처리, 에이전트 간 직접 소통 불가
 적합: 코드 리뷰/분석, 리서치, 파일별 독립 분석
 부적합: 여러 파일 동시 수정, 장시간 실행
@@ -171,6 +171,9 @@ Team 모드에서 여러 에이전트가 동시에 파일을 수정할 때 사�
 
 ### 락 프로토콜
 
+⚠️ **Best-effort 방식**: 파일 기반 락은 원자적이지 않음 (TOCTOU 경쟁 조건 존재).
+모듈 분배(1단계)로 충돌을 사전 방지하고, 락은 보조 수단으로만 사용.
+
 ```
 1. 작업 시작 전:
    - active_work_registry.json 읽기
@@ -253,18 +256,21 @@ TE=TestExpert, RP=ReactPro, RS=RustSage
 
 **규칙: 자기 영역이 아닌 이슈는 반드시 `defer_to` 필드에 표시하고 수정안을 제시하지 않는다.**
 
-## 3-Tier 모델 라우팅 (Step 1.6) — v3 UPDATED
+## 정적 모델 라우팅 (Step 1.6) — v3.1 SE FIX
 
-모델은 **haiku / sonnet / opus** 3-tier로 운용합니다.
+Agent tool에 `model` 파라미터가 없으므로 **호출 시점의 동적 모델 선택은 불가능**합니다.
+모델은 agent `.md` frontmatter의 `model` 필드로 정적 지정됩니다.
 
-| Tier | 모델 | 용도 | 입력 단가 | 출력 단가 |
-|------|------|------|----------|----------|
-| **Explore** | haiku 4.5 | 코드 탐색, 파일 스캔, 구조 파악 | $1/1M | $5/1M |
-| **Execute** | sonnet 4.6 | 분석/구현/테스트 (대부분의 작업) | $3/1M | $15/1M |
-| **Reason** | opus 4.6 | HIGH 난이도 코드의 추론 집약 분석 | $5/1M | $25/1M |
+| 계층 | 모델 | 설정 방법 | 용도 |
+|------|------|----------|------|
+| **Explore** | haiku | 빌트인 (자동) | 코드 탐색, 파일 스캔 |
+| **분석 에이전트** | sonnet | frontmatter `model: sonnet` | 분석/구현 (기본값) |
+| **Opus 승격** | opus | 사용자가 frontmatter 수정 | 고난이도 추론 |
 
-**참고:** Opus 4.6 (2026.02 출시)으로 Reason tier 비용이 1/3 수준으로 인하됨.
-에이전트 frontmatter에서 `model` 필드를 제거하여 리드가 난이도에 따라 동적으로 모델을 결정합니다.
+**제약사항 (Agent tool API 한계):**
+- 호출 시점에 모델을 동적으로 변경할 수 없음
+- 모든 커스텀 에이전트는 `model: sonnet`으로 설정됨
+- Opus 필요 시: 해당 agent `.md`의 frontmatter를 `model: opus`로 수정
 
 **코드 난이도 판정:**
 | 난이도 | 모델 | 시그널 |
@@ -643,10 +649,10 @@ function distributeTasksForTeam(target, mode):
 ### Team 모드 비용 최적화
 
 ```
-전략 1: Lead는 Opus, Teammate는 Sonnet
-  → Lead의 조율 판단은 높은 추론 필요
-  → Teammate의 구현/분석은 Sonnet으로 충분
-  → 비용 약 40% 절감
+전략 1: Teammate agent frontmatter에 model: sonnet 설정
+  → 모든 분석/구현 에이전트는 sonnet으로 충분
+  → Lead(메인 세션)만 opus 유지 시 비용 절감
+  → 참고: Agent tool에 model 파라미터 없음, frontmatter로만 제어
 
 전략 2: Teammate 수 최소화
   → 3명이면 충분한 곳에 5명 투입 금지
@@ -665,7 +671,7 @@ function distributeTasksForTeam(target, mode):
 ### AgentSpeak 프로토콜 (Team 모드 토큰 최적화) — v3 NEW
 
 Team 모드에서 에이전트 간 메시지를 토큰 효율적 구조화 프로토콜로 전달합니다.
-자연어 대비 **60-70% 토큰 절감**. (출처: yuvalsuede/claude-teams-language-protocol)
+자연어 대비 토큰 효율적 통신. (참고: yuvalsuede/claude-teams-language-protocol, 실측치는 미확인)
 
 **왜 필요한가:**
 - Team 모드에서 teammate 간 SendMessage로 자연어 소통 시 토큰 낭비
@@ -747,66 +753,28 @@ Team 모드에서 teammate가 프로젝트 맥락을 이해하도록 CLAUDE.md�
 
 ---
 
-## PreCompact Hook 설정 — v3 NEW
+## 컨텍스트 보호 전략 — v3.1 SE FIX
 
-장시간 Squad 세션에서 auto-compaction으로 분석 상태가 소실되는 것을 방지합니다.
+⚠️ **PreCompact hook은 존재하지 않음.** Claude Code의 유효한 hook 이벤트:
+PreToolUse, PostToolUse, SessionStart, SessionEnd, UserPromptSubmit, SubagentStart, SubagentStop
 
-**왜 필요한가:**
-- Squad는 다단계 프로세스 (Explore → 편성 → 분석 → 수정 → 검증)
-- Auto-compaction(95% 시 자동)이 발생하면 현재 진행 상태, 에이전트 결과, 수정 계획이 소실
-- PreCompact hook으로 compaction 직전에 상태를 파일로 저장 → 복원 가능
-
-**Hook 설정 (`.claude/settings.json`):**
-```json
-{
-  "hooks": {
-    "PreCompact": [
-      {
-        "matcher": "",
-        "command": "cat > .claude/squad-state-snapshot.md << 'SNAPSHOT'\n# Squad State Snapshot (auto-saved before compaction)\n# Timestamp: $(date -u +%Y-%m-%dT%H:%M:%SZ)\n# Resume: 이 파일이 존재하면 Squad가 자동으로 상태를 복원합니다.\nSNAPSHOT"
-      }
-    ]
-  }
-}
-```
-
-**Squad 리드의 PreCompact 대응:**
-```
-PreCompact hook 발동 시, Squad 리드는 compaction 전에:
-
-1. 현재 상태를 .claude/squad-state-snapshot.md에 기록:
-   - current_phase: "analysis" | "fix" | "verify" | "self-correction"
-   - agents_deployed: ["CleanCode", "BugHunter", ...]
-   - findings_so_far: [JSON 계약 결과 요약]
-   - files_modified: ["경로 목록"]
-   - pending_fixes: [아직 적용 안 된 수정 목록]
-   - self_correction_pass: 현재 pass 번호
-   - model_routing: {agent: tier} 매핑
-
-2. Compaction 후 복원:
-   - squad-state-snapshot.md 존재 확인
-   - 존재하면 상태 로드 → 중단된 phase부터 재개
-   - "Compaction 후 복원됨. Phase: {phase}부터 계속합니다." 메시지 출력
-   - 파일은 복원 후 삭제 (1회성)
-```
-
-**조기 컴팩션 설정 (권장):**
+**컨텍스트 보호 방법:**
 ```bash
-# 환경변수로 80%에서 미리 컴팩션 실행
+# 1. 조기 컴팩션 설정 (권장)
 export CLAUDE_AUTOCOMPACT_PCT_OVERRIDE=80
 
-# Squad 세션 시작 전 수동 컴팩션
-# /compact 명령으로 컨텍스트 정리 후 시작
+# 2. Squad 세션 시작 전 /compact로 수동 정리
+
+# 3. PreToolUse hook으로 핵심 지침 재주입 (유효한 hook)
 ```
 
-**PreToolUse hook으로 지침 재주입 (대안):**
 ```json
 {
   "hooks": {
     "PreToolUse": [
       {
         "matcher": "Agent",
-        "command": "echo '## Squad 핵심 지침 재주입\n에이전트 실행 시 JSON 계약 준수, defer_to 위임, task_alignment 포함 필수.'"
+        "command": "echo '## Squad 지침: JSON 계약 준수, defer_to 위임, task_alignment 포함 필수.'"
       }
     ]
   }
@@ -833,7 +801,7 @@ Overlooked DB를 확장하여 에이전트별 학습 패턴을 세션 간 축적
 └── convention-overrides.md   # 프로젝트 특화 룰 오버라이드
 ```
 
-**project-profile.md (자동 생성):**
+**project-profile.md (`/squad init`으로 생성):**
 ```markdown
 # 프로젝트 프로파일
 - 언어: TypeScript (80%), Rust (20%)
@@ -845,7 +813,7 @@ Overlooked DB를 확장하여 에이전트별 학습 패턴을 세션 간 축적
 - 최종 업데이트: 2026-03-06
 ```
 
-**false-positives.md (자동 축적):**
+**false-positives.md (`/squad reject`로 수동 등록):**
 ```markdown
 # False Positive 패턴
 
@@ -860,7 +828,7 @@ Overlooked DB를 확장하여 에이전트별 학습 패턴을 세션 간 축적
 - 제네릭 제약 부족 경고: internal API는 relaxed typing 허용
 ```
 
-**agent-effectiveness.md (자동 축적):**
+**agent-effectiveness.md (수동 기록):**
 ```markdown
 # 에이전트 효과 추적
 
@@ -885,7 +853,7 @@ Overlooked DB를 확장하여 에이전트별 학습 패턴을 세션 간 축적
 - TypeGuard: `as any` 사용 시 항상 major
 ```
 
-**학습 사이클:**
+**학습 사이클 (수동 — CLI 환경 한계로 자동 학습 불가):**
 ```
 세션 시작:
   1. .claude/squad-memory/ 존재 확인
@@ -893,15 +861,10 @@ Overlooked DB를 확장하여 에이전트별 학습 패턴을 세션 간 축적
   3. false-positives.md 로드 → 에이전트 프롬프트에 "무시할 패턴" 주입
   4. convention-overrides.md 로드 → 체크리스트 오버라이드
 
-세션 중:
-  5. 사용자가 finding을 거부/무시하면 → false positive 후보로 기록
-  6. 같은 패턴이 3회 이상 거부되면 → false-positives.md에 자동 추가
-  7. Critical Consensus에서 다운그레이드된 항목 추적
-
-세션 종료:
-  8. agent-effectiveness.md 업데이트 (findings 수, 정확도)
-  9. project-profile.md 업데이트 (새 파일/언어 발견 시)
-  10. Overlooked DB와 병합 (중복 제거)
+수동 관리:
+  5. `/squad reject {finding}` → false-positives.md에 등록
+  6. convention-overrides.md → 사용자가 직접 편집
+  7. agent-effectiveness.md → 사용자가 필요시 직접 기록
 ```
 
 **에이전트 프롬프트에 주입 (확장):**
@@ -922,7 +885,7 @@ Overlooked DB를 확장하여 에이전트별 학습 패턴을 세션 간 축적
 ```
 /squad init 실행 시:
 1. .claude/squad-memory/ 디렉토리 생성
-2. Explore 에이전트로 프로젝트 스캔 → project-profile.md 자동 생성
+2. Explore 에이전트로 프로젝트 스캔 → project-profile.md 생성
 3. 빈 false-positives.md, agent-effectiveness.md, convention-overrides.md 생성
 4. "Squad 학습 디렉토리 초기화 완료" 메시지
 ```
