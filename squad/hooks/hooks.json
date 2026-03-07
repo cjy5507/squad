@@ -42,6 +42,17 @@
         ]
       }
     ],
+    "SessionStart": [
+      {
+        "matcher": "compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/session-resume.sh"
+          }
+        ]
+      }
+    ],
     "Stop": [
       {
         "matcher": "",

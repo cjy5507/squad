@@ -22,6 +22,7 @@ argument-hint: "[command] [target-path] [--options]"
 | init | `/squad:init` | 학습 초기화 |
 | reject | `/squad:reject` | False positive 등록 |
 | learn, 학습, 통계, stats | `/squad:learn` | 학습 통계 대시보드 |
+| cancel, 취소, 중단, 멈춰 | `/squad:cancel` | 진행 중인 작업 취소 |
 
 ## 핵심 원칙
 

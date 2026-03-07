@@ -1,6 +1,6 @@
 {
   "name": "squad",
-  "version": "4.1.0",
+  "version": "4.2.0",
   "description": "병렬 전문가 에이전트 오케스트레이터 + 자기 학습",
   "author": {"name": "cjy5507"},
   "repository": "https://github.com/cjy5507/squad",

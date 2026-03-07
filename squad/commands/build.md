@@ -1,7 +1,7 @@
 ---
 name: build
 description: 구현 루프 — Explore→Plan→Implement→Verify 사이클을 완료까지 반복합니다. (ralph-style)
-argument-hint: "<task-description>"
+argument-hint: "<task-description> [--max-iter N]"
 ---
 
 # /squad:build — 구현 루프 (implement-until-done)
@@ -10,6 +10,10 @@ argument-hint: "<task-description>"
 
 **절대 중간에 멈추지 마라. 사용자 입력을 기다리지 마라.**
 **Phase 1~4를 한 번의 실행으로 전부 완료하라.**
+
+## 옵션
+
+- `--max-iter N` — 최대 반복 횟수 지정 (기본값: 10). 이 횟수에 도달하면 build-loop이 자동 종료됩니다.
 
 ## 상태 관리
 
@@ -20,8 +24,11 @@ status: in-progress
 phase: explore
 task: {task-description}
 started: {timestamp}
+iterations: 0
+max_iter: {N | 10}
 ```
 
+`--max-iter N` 옵션이 있으면 `max_iter: N`으로 설정, 없으면 `max_iter: 10`.
 각 Phase 완료 시 상태 업데이트. 컴팩션 복구에 사용.
 
 ## Phase 1: Explore

@@ -1,19 +1,20 @@
-# Squad v4.1 — Parallel Expert Agent Orchestrator
+# Squad v4.2 — Parallel Expert Agent Orchestrator
 
-코드베이스를 다각도로 분석하는 11개 전문가 에이전트를 자율 편성하여 병렬 실행하는 Claude Code 플러그인.
+코드베이스를 다각도로 분석하는 12개 전문가 에이전트를 자율 편성하여 병렬 실행하는 Claude Code 플러그인.
 
 ## Features
 
-- **11 Expert Agents** — CleanCode, Architect, BugHunter, TypeGuard, PerfTuner, TestExpert, ReactPro, RustSage, DocWriter, CodeExplorer, CodeFixer
+- **12 Expert Agents** — CleanCode, Architect, BugHunter, TypeGuard, PerfTuner, TestExpert, ReactPro, RustSage, DocWriter, CodeExplorer, CodeFixer, ClaudeMdChecker
 - **Confidence Scoring** — 0-100 신뢰도, 80 미만 자동 필터링으로 노이즈 제거
-- **8 Commands** — analyze, fix, build, review, team, init, reject, learn
-- **Build Mode** — ralph-style implement-until-done 루프
+- **9 Commands** — analyze, fix, build, review, team, init, reject, learn, cancel
+- **Build Mode** — ralph-style implement-until-done 루프 (max-iterations 지원)
 - **PR Review** — 4-에이전트 병렬 리뷰 + confidence scoring
 - **Self-Correction Loop** — N-pass 자기 교정으로 수정 품질 보장
 - **Anti-Drift + Critical Consensus** — 목표 이탈 방지, critical 교차 검증
-- **Hooks** — JSON 검증, build 루프 지속, analyze 모드 수정 차단, 수정 추적, 컴팩션 전 학습 저장
+- **Hooks** — JSON 검증, build 루프 지속, analyze 모드 수정 차단, 수정 추적, 컴팩션 전 학습 저장, 컴팩션 후 자동 재개
 - **Self-Learning System** — 수정 이력 추적, 리버트 자동 감지, 에이전트 정확도 스코어링, 핫스팟 파일 식별
 - **Persistent Learning** — 프로젝트별 false positive/컨벤션 학습
+- **CLAUDE.md Compliance** — 프로젝트 룰 자동 준수 검사
 
 ## Installation
 
@@ -46,12 +47,14 @@ claude
 | `/squad:fix src/` | 자동 수정 + 자기 교정 루프 |
 | `/squad:fix --thorough src/` | 3-pass 철저 모드 |
 | `/squad:build "task"` | 구현 루프 (완료까지 반복) |
+| `/squad:build "task" --max-iter N` | 구현 루프 (최대 N회 반복) |
 | `/squad:review` | PR 리뷰 (git diff 기반) |
 | `/squad:review --comment` | PR 리뷰 + GitHub 코멘트 |
 | `/squad:team src/` | Team 모드 (대규모 병렬) |
 | `/squad:init` | 프로젝트 학습 초기화 |
 | `/squad:reject {finding}` | False positive 등록 |
 | `/squad:learn` | 학습 통계 대시보드 |
+| `/squad:cancel` | 진행 중인 작업 취소 |
 
 ## Expert Agents
 
@@ -72,6 +75,11 @@ claude
 | **RustSage** | Rust 코드 |
 | **DocWriter** | 공개 API/라이브러리 |
 
+### Project (프로젝트 룰)
+| Agent | Condition |
+|-------|-----------|
+| **ClaudeMdChecker** | CLAUDE.md 존재 시 항상 투입 |
+
 ### Special
 | Agent | Role |
 |-------|------|
@@ -90,6 +98,7 @@ Squad는 사용할수록 정확도가 향상되는 자기 학습 시스템을 �
 4. **적응형 임계값** — 점수가 낮은 에이전트는 confidence 임계값이 자동 상향되어 노이즈 감소
 5. **핫스팟 식별** — 반복 수정 파일을 식별하여 집중 분석 대상으로 지정
 6. **세션 생존** — `PreCompact` 훅이 컴팩션 전 세션 요약을 저장하여 컨텍스트 유실 방지
+7. **컴팩션 재개** — `SessionStart` 훅이 컴팩션 후 in-progress 작업을 자동으로 Claude에 알림
 
 ### 학습 데이터
 
@@ -110,10 +119,10 @@ Squad는 사용할수록 정확도가 향상되는 자기 학습 시스템을 �
 ```
 squad/
 ├── .claude-plugin/plugin.json    # Plugin manifest
-├── commands/                     # 8 slash commands
+├── commands/                     # 9 slash commands
 ├── skills/squad-auto/SKILL.md    # Auto-trigger skill
-├── agents/                       # 11 agent definitions
-├── hooks/                        # Hook scripts (5 hooks)
+├── agents/                       # 12 agent definitions
+├── hooks/                        # Hook scripts (6 hooks)
 ├── references/                   # Shared references (DRY)
 ├── install.sh
 └── uninstall.sh

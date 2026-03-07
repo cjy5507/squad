@@ -57,8 +57,9 @@ Explore 에이전트를 사용하여 대상 경로를 탐색합니다:
 
 Tier 1 (Core): CleanCode, Architect, BugHunter
 Tier 2 (Contextual): TestExpert, PerfTuner, TypeGuard, ReactPro, RustSage, DocWriter
+Tier 3 (Project): ClaudeMdChecker
 
-편성 규칙: `.ts/.tsx` → TypeGuard | React → ReactPro | `.rs` → RustSage | 테스트 파일 → TestExpert | 루프/쿼리 → PerfTuner | 공개 API → DocWriter
+편성 규칙: `.ts/.tsx` → TypeGuard | React → ReactPro | `.rs` → RustSage | 테스트 파일 → TestExpert | 루프/쿼리 → PerfTuner | 공개 API → DocWriter | CLAUDE.md 존재 시 → ClaudeMdChecker 항상 추가
 
 ### 3. 병렬 실행
 
