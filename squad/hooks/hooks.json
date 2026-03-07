@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Agent",
+        "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/validate-output.sh"
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/build-loop.sh"
+      }
+    ]
+  }
+}
