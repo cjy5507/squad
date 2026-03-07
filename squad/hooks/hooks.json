@@ -3,13 +3,34 @@
     "PostToolUse": [
       {
         "matcher": "Agent",
-        "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/validate-output.sh"
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/validate-output.sh"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/guard-plan-mode.sh"
+          }
+        ]
       }
     ],
     "Stop": [
       {
         "matcher": "",
-        "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/build-loop.sh"
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/build-loop.sh"
+          }
+        ]
       }
     ]
   }

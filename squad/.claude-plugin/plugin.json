@@ -1,8 +1,10 @@
 {
   "name": "squad",
-  "version": "4.0.0",
-  "description": "병렬 전문가 에이전트 오케스트레이터 — 코드베이스를 다각도로 분석하는 11개 전문가 에이전트를 자율 편성하여 병렬 실행",
-  "author": {
-    "name": "cjy5507"
-  }
+  "version": "4.0.2",
+  "description": "병렬 전문가 에이전트 오케스트레이터",
+  "author": {"name": "cjy5507"},
+  "repository": "https://github.com/cjy5507/squad",
+  "license": "MIT",
+  "keywords": ["code-review", "multi-agent", "analysis"],
+  "hooks": "./hooks/hooks.json"
 }

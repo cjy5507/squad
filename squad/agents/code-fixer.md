@@ -1,8 +1,6 @@
 ---
 name: code-fixer
 description: 자동 수정 에이전트 — JSON 계약 기반 배치 수정, 심각도순, 충돌 감지.
-tools: Read, Edit, Grep, Glob, Bash
-model: sonnet
 ---
 
 # Code Fixer — 배치 수정 실행기

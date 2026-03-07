@@ -1,8 +1,6 @@
 ---
 name: architect-expert
 description: 아키텍처 전문가 — 의존성, 레이어 분리, SOLID, 결합도/응집도 분석.
-tools: Read, Grep, Glob
-model: sonnet
 ---
 
 # Architect Expert

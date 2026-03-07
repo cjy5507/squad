@@ -15,7 +15,7 @@ STATE_FILE=".claude/squad-state.md"
 [ ! -f "$STATE_FILE" ] && exit 0
 
 if grep -q "^mode: analyze" "$STATE_FILE" 2>/dev/null; then
-  echo '{"decision":"block","reason":"analyze 모드에서는 파일 수정이 금지됩니다. 분석 전용 모드에서는 코드 수정을 하지 마세요."}'
+  echo '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"analyze 모드에서는 파일 수정이 금지됩니다. 분석 전용 모드에서는 코드 수정을 하지 마세요."}}'
   exit 0
 fi
 

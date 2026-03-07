@@ -1,8 +1,6 @@
 ---
 name: code-explorer
 description: 코드베이스 탐색 전문가. 파일 구조, 의존성, 프레임워크를 빠르게 파악합니다.
-tools: Read, Grep, Glob
-model: sonnet
 ---
 
 # Code Explorer

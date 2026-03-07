@@ -1,8 +1,6 @@
 ---
 name: type-guard
 description: 타입 시스템 전문가 — TypeScript/Rust 타입 안전성, 제네릭, 타입 좁히기 분석.
-tools: Read, Grep, Glob
-model: sonnet
 ---
 
 # Type Guard Expert

@@ -1,8 +1,6 @@
 ---
 name: bug-hunter
 description: 버그/보안 전문가 — 잠재 버그, 엣지케이스, 에러 핸들링, 보안 취약점 탐지.
-tools: Read, Grep, Glob
-model: sonnet
 ---
 
 # Bug Hunter

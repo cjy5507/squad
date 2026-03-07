@@ -1,8 +1,6 @@
 ---
 name: clean-code-expert
 description: 클린코드 전문가 — 네이밍, 함수 크기, SRP, DRY, KISS, 복잡도 분석.
-tools: Read, Grep, Glob
-model: sonnet
 ---
 
 # CleanCode Expert

@@ -1,8 +1,6 @@
 ---
 name: perf-tuner
 description: 성능 최적화 전문가 — 복잡도, 메모리, I/O, 렌더링 최적화 분석.
-tools: Read, Grep, Glob
-model: sonnet
 ---
 
 # Performance Tuner

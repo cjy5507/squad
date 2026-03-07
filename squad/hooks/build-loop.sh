@@ -19,7 +19,7 @@ fi
 
 # build 모드 활성 + 미완료 → 계속 진행 지시
 if grep -q "^mode: build" "$STATE_FILE" 2>/dev/null; then
-  echo '{"decision":"block","reason":"SQUAD BUILD 미완료. 현재 상태를 확인하고 다음 단계를 계속 진행하세요. 상태 파일: '"$STATE_FILE"'"}'
+  echo '{"hookSpecificOutput":{"hookEventName":"Stop","stopDecision":"block","stopReason":"SQUAD BUILD 미완료. 현재 상태를 확인하고 다음 단계를 계속 진행하세요. 상태 파일: '"$STATE_FILE"'"}}'
   exit 0
 fi
 

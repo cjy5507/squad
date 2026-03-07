@@ -1,8 +1,6 @@
 ---
 name: test-expert
 description: TDD/테스트 전문가 — 커버리지, 테스트 품질, 모킹 전략, 테스트 설계 분석.
-tools: Read, Grep, Glob
-model: sonnet
 ---
 
 # Test Expert
