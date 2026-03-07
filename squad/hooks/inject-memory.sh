@@ -49,7 +49,7 @@ fi
 
 [ -z "$PARTS" ] && exit 0
 
-# JSON 출력 (jq로 안전하게 이스케이프)
-jq -cn --arg msg "$PARTS" '{addToConversation: $msg}'
+# JSON 출력 (printf + jq -Rs로 newline 이스케이프 보장)
+printf '%s' "$PARTS" | jq -Rsn '{addToConversation: input}'
 
 exit 0

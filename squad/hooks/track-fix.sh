@@ -40,7 +40,15 @@ TITLE=$(grep '^title:' "$STATE_FILE" 2>/dev/null | sed 's/^title: //')
 
 TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
-# JSONL에 한 줄 추가
-echo "{\"timestamp\":\"$TIMESTAMP\",\"file\":\"$FILE_PATH\",\"agent\":\"$AGENT\",\"severity\":\"$SEVERITY\",\"title\":\"$TITLE\",\"mode\":\"$MODE\"}" >> "$HISTORY_FILE"
+# JSONL에 한 줄 추가 (jq로 안전하게 이스케이프)
+jq -cn \
+  --arg ts "$TIMESTAMP" \
+  --arg file "$FILE_PATH" \
+  --arg agent "$AGENT" \
+  --arg sev "$SEVERITY" \
+  --arg title "$TITLE" \
+  --arg mode "$MODE" \
+  '{timestamp:$ts,file:$file,agent:$agent,severity:$sev,title:$title,mode:$mode}' \
+  >> "$HISTORY_FILE" 2>/dev/null
 
 exit 0
