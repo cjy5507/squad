@@ -26,49 +26,36 @@ started: {timestamp}
 
 ## Phase 1: Explore
 
-```
-Agent(subagent_type: "code-explorer", prompt:
-  "작업: {task-description}
-   파악: 관련 파일, 구조, 의존성, 수정 범위.
-   결과를 1000자 이내 요약으로 반환.",
-  mode: "plan")
-```
+Agent 도구로 code-explorer 에이전트를 호출합니다:
+- 작업: {task-description}
+- 파악할 것: 관련 파일, 구조, 의존성, 수정 범위
+- 결과를 1000자 이내 요약으로 반환
+- 이 단계에서는 소스 코드를 수정하지 않습니다
 
 ## Phase 2: Plan
 
-```
-Agent(prompt:
-  "작업: {task-description}
-   컨텍스트: {Phase 1 요약의 파일 목록}
-
-   소스 코드를 수정하지 마라. 계획 파일만 작성하라.
-
-   Write tool로 .claude/squad-plan.json에 저장:
-   [{\"file\": \"경로\", \"changes\": [{\"line\": N,
-     \"old_string\": \"현재코드\", \"new_string\": \"수정코드\",
-     \"reason\": \"이유\", \"severity\": \"critical|major|minor\"}]}]
-
-   리드에게는 이것만 반환: '계획 완료: N개 파일, M개 변경사항'",
-  mode: "acceptEdits")
-```
+Agent 도구를 호출하여 실행 계획을 수립합니다:
+- 작업: {task-description}
+- 컨텍스트: Phase 1 요약의 파일 목록
+- 소스 코드를 수정하지 말고, 계획 파일만 작성합니다
+- Write 도구로 `.claude/squad-plan.json`에 저장:
+  ```json
+  [{"file": "경로", "changes": [{"line": N, "old_string": "현재코드", "new_string": "수정코드", "reason": "이유", "severity": "critical|major|minor"}]}]
+  ```
+- 완료 후 "계획 완료: N개 파일, M개 변경사항"만 반환
 
 ## Phase 3: Implement
 
-```
-Agent(subagent_type: "code-fixer", prompt:
-  "Read .claude/squad-plan.json을 읽어서 모든 변경사항을 실행하라.
-   수정 규칙: 심각도순, 라인역순, old_string 검증.
-   완료 후 적용/스킵/실패 건수만 반환하라.",
-  mode: "acceptEdits")
-```
+Agent 도구로 code-fixer 에이전트를 호출합니다:
+- `.claude/squad-plan.json`을 읽어서 모든 변경사항을 실행
+- 수정 규칙: 심각도순, 라인역순, old_string 검증
+- 완료 후 적용/스킵/실패 건수만 반환
 
 ## Phase 4: Verify
 
-리드가 직접 빌드/테스트 실행.
-```
-실패 시 → Agent(subagent_type: "code-fixer", prompt: "빌드 에러 수정", mode: "acceptEdits")
-성공 시 → .claude/squad-plan.json 삭제, 상태를 complete로 업데이트
-```
+리드가 직접 빌드/테스트를 실행합니다.
+- 실패 시 → Agent 도구로 code-fixer 에이전트를 호출하여 빌드 에러 수정
+- 성공 시 → `.claude/squad-plan.json` 삭제, 상태를 complete로 업데이트
 
 Stop hook (`build-loop.sh`)이 미완료 시 재실행을 강제합니다.
 

@@ -10,15 +10,12 @@ argument-hint: "<target-path> [--experts Agent1,Agent2]"
 
 ## 실행 절차
 
-### 1. Explore (haiku 사전 탐색)
+### 1. Explore (사전 탐색)
 
-```
-Agent(subagent_type: "Explore", prompt:
-  "대상: {target-path}
-   파악: 1) 파일 목록+라인수 2) 언어 분류 3) 테스트 존재 여부
-   4) 난이도 시그널 5) 모듈 의존성 6) 프레임워크 감지
-   결과를 1000자 이내 요약으로 반환.")
-```
+Explore 에이전트를 사용하여 대상 경로를 탐색합니다:
+- 대상: {target-path}
+- 파악할 것: 1) 파일 목록+라인수 2) 언어 분류 3) 테스트 존재 여부 4) 난이도 시그널 5) 모듈 의존성 6) 프레임워크 감지
+- 결과를 1000자 이내 요약으로 반환
 
 ### 2. 적응형 에이전트 편성
 
@@ -36,9 +33,14 @@ Tier 2 (Contextual): TestExpert, PerfTuner, TypeGuard, ReactPro, RustSage, DocWr
 
 ### 3. 병렬 실행
 
-각 에이전트를 `subagent_type`으로 호출. 3명 이상이면 `run_in_background: true`.
-에이전트 프롬프트에는 `references/json-contract.md`의 출력 형식을 포함.
-`mode: "plan"` 설정 (분석 전용, 수정 금지).
+편성된 각 전문가 에이전트를 Agent 도구로 병렬 호출합니다. 3명 이상이면 `run_in_background: true`로 실행합니다.
+
+각 에이전트에게 전달할 프롬프트:
+- 대상 파일 경로
+- `references/json-contract.md`의 출력 형식
+- "분석만 수행하고 코드를 수정하지 마세요" 지시
+
+guard-plan-mode.sh 훅이 analyze 모드에서 Edit/Write를 차단합니다.
 
 ### 4. 결과 통합
 

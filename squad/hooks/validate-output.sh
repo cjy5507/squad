@@ -1,6 +1,6 @@
 #!/bin/bash
 # validate-output.sh — 에이전트 JSON 출력 검증
-# PreToolUse hook: Agent tool 호출 시 실행
+# PostToolUse hook: Agent tool 응답 후 실행
 
 INPUT=$(cat)
 TOOL_NAME=$(echo "$INPUT" | jq -r '.tool_name // empty')
@@ -8,7 +8,8 @@ TOOL_NAME=$(echo "$INPUT" | jq -r '.tool_name // empty')
 # Agent tool 호출이 아니면 패스
 [ "$TOOL_NAME" != "Agent" ] && exit 0
 
-RESPONSE=$(echo "$INPUT" | jq -r '.tool_response // empty')
+# PostToolUse는 tool_input과 tool_response를 모두 받음
+RESPONSE=$(echo "$INPUT" | jq -r '.tool_response.response // .tool_response // empty')
 [ -z "$RESPONSE" ] && exit 0
 
 # markdown fence 제거 후 JSON 파싱

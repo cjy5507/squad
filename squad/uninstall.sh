@@ -9,7 +9,13 @@ PLUGIN_DIR="$CLAUDE_DIR/plugins/squad"
 echo "=== Squad v4 Uninstaller ==="
 echo ""
 
-read -p "Remove Squad v4 plugin? (y/N): " confirm
+# Pipe detection: if stdin is not a terminal, auto-proceed
+if [ ! -t 0 ]; then
+  confirm="y"
+else
+  read -p "Remove Squad v4 plugin? (y/N): " confirm
+fi
+
 if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
   echo "Cancelled."
   exit 0
@@ -30,7 +36,11 @@ done
 
 echo "[2/2] Removing project data (optional)..."
 if [ -d ".claude/squad-memory" ]; then
-  read -p "  Remove squad-memory/ learning data? (y/N): " confirm_mem
+  if [ ! -t 0 ]; then
+    confirm_mem="y"
+  else
+    read -p "  Remove squad-memory/ learning data? (y/N): " confirm_mem
+  fi
   if [[ "$confirm_mem" == "y" || "$confirm_mem" == "Y" ]]; then
     rm -rf ".claude/squad-memory"
     echo "  Removed."

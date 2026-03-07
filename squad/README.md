@@ -20,6 +20,23 @@
 curl -fsSL https://raw.githubusercontent.com/cjy5507/squad/main/squad/install.sh | bash
 ```
 
+## Quick Start
+
+```bash
+# 1. Install
+curl -fsSL https://raw.githubusercontent.com/cjy5507/squad/main/squad/install.sh | bash
+
+# 2. Open Claude Code in your project
+cd your-project
+claude
+
+# 3. Run a command
+/squad:analyze src/       # Analyze code quality
+/squad:fix src/           # Auto-fix issues
+/squad:build "add login"  # Build a feature end-to-end
+/squad:review             # Review PR changes
+```
+
 ## Commands
 
 | Command | Description |

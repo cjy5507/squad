@@ -8,7 +8,9 @@ argument-hint: "[command] [target-path] [--options]"
 
 코드베이스를 다각도로 분석하는 전문가 에이전트 스쿼드를 자율 편성하여 병렬 실행합니다.
 
-## 명령어 라우팅
+## 사용 가능한 명령어
+
+사용자의 요청에서 아래 키워드를 감지하면, 해당 명령 파일(`commands/*.md`)의 절차를 따르세요.
 
 | 키워드 | 명령 | 설명 |
 |--------|------|------|
@@ -33,5 +35,3 @@ argument-hint: "[command] [target-path] [--options]"
 Core: CleanCode, Architect, BugHunter
 Contextual: TestExpert, PerfTuner, TypeGuard, ReactPro, RustSage, DocWriter
 Special: CodeExplorer (탐색), CodeFixer (수정)
-
-키워드를 감지하여 해당 명령 파일(`commands/*.md`)을 실행하세요.

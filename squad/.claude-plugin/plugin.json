@@ -2,36 +2,7 @@
   "name": "squad",
   "version": "4.0.0",
   "description": "병렬 전문가 에이전트 오케스트레이터 — 코드베이스를 다각도로 분석하는 11개 전문가 에이전트를 자율 편성하여 병렬 실행",
-  "commands": [
-    "commands/analyze.md",
-    "commands/fix.md",
-    "commands/build.md",
-    "commands/review.md",
-    "commands/team.md",
-    "commands/init.md",
-    "commands/reject.md"
-  ],
-  "skills": [
-    "skills/squad-auto/SKILL.md"
-  ],
-  "agents": [
-    "agents/code-explorer.md",
-    "agents/clean-code-expert.md",
-    "agents/architect-expert.md",
-    "agents/bug-hunter.md",
-    "agents/type-guard.md",
-    "agents/perf-tuner.md",
-    "agents/test-expert.md",
-    "agents/react-pro.md",
-    "agents/rust-sage.md",
-    "agents/doc-writer.md",
-    "agents/code-fixer.md"
-  ],
-  "hooks": "hooks/hooks.json",
-  "references": [
-    "references/checklists.md",
-    "references/lang-rules.md",
-    "references/json-contract.md",
-    "references/cost-guide.md"
-  ]
+  "author": {
+    "name": "cjy5507"
+  }
 }
