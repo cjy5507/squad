@@ -54,10 +54,33 @@ while consecutivePasses < requiredPasses && iteration < maxIterations:
 maxIterations 도달 시 → "자동 수정 불가, 수동 검토 필요" 탈출
 ```
 
-### 5. 최종 리포트
+### 5. 리버트 감지 (자기 학습)
+
+`.claude/squad-memory/` 디렉토리가 존재하면 자기 학습을 수행합니다:
+
+**수정 이력 대조:**
+- `fix-history.jsonl`에서 이전 수정 기록을 읽음
+- `git log --oneline --diff-filter=M` 결과와 대조
+- 이전에 squad가 수정한 파일이 이후 사용자에 의해 재변경된 경우 → 잠재적 리버트로 판단
+
+**리버트 감지 시 자동 처리:**
+- 해당 패턴을 `false-positives.md`에 자동 등록:
+  ```markdown
+  ## {에이전트명}
+  - `{패턴}`: 사용자가 수정을 되돌림 (자동 감지, {날짜})
+  ```
+- `agent-effectiveness.md`에서 해당 에이전트 점수를 -5 차감
+
+**에이전트 정확도 업데이트:**
+- 성공적으로 유지된 수정 → 해당 에이전트 점수 +1 (최대 100)
+- 리버트된 수정 → 해당 에이전트 점수 -5 (최소 0)
+- 결과를 `agent-effectiveness.md`에 기록
+
+### 6. 최종 리포트
 
 ```
 적용: N건 | 스킵: M건 | 실패: K건
 자기 교정: X iterations, Y consecutive passes
 빌드: PASS/FAIL | 테스트: PASS/FAIL
+리버트 감지: R건 (자동 false positive 등록)
 ```

@@ -33,9 +33,40 @@ Explore 에이전트로 프로젝트 구조를 스캔하여 `project-profile.md`
 - 최종 업데이트: {날짜}
 ```
 
-### 3. 빈 파일 생성
+### 3. 템플릿 파일 생성
 
-나머지 파일은 빈 템플릿으로 생성. 사용자가 직접 편집하거나 `/squad:reject`로 자동 축적.
+나머지 파일을 초기 템플릿으로 생성합니다:
+
+**agent-effectiveness.md:**
+```markdown
+# 에이전트 정확도
+
+각 에이전트의 분석 정확도를 0-100으로 추적합니다.
+점수는 수정 유지 시 +1, 리버트 시 -5로 자동 조정됩니다.
+
+| Agent | Score | Total Fixes | Reverts | Last Updated |
+|-------|-------|-------------|---------|--------------|
+| CleanCode | 100 | 0 | 0 | - |
+| Architect | 100 | 0 | 0 | - |
+| BugHunter | 100 | 0 | 0 | - |
+| TypeGuard | 100 | 0 | 0 | - |
+| PerfTuner | 100 | 0 | 0 | - |
+| TestExpert | 100 | 0 | 0 | - |
+| ReactPro | 100 | 0 | 0 | - |
+| RustSage | 100 | 0 | 0 | - |
+| DocWriter | 100 | 0 | 0 | - |
+```
+
+**fix-history.jsonl:** 빈 파일 (JSONL 형식, 수정 시 자동 추가)
+
+**session-summary.md:**
+```markdown
+# 세션 히스토리
+
+각 세션의 요약이 PreCompact 훅에 의해 자동 기록됩니다.
+```
+
+**false-positives.md** 및 **convention-overrides.md**: 빈 템플릿으로 생성. 사용자가 직접 편집하거나 `/squad:reject`로 자동 축적.
 
 ### 4. 완료 메시지
 

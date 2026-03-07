@@ -1,4 +1,4 @@
-# Squad v4 — Parallel Expert Agent Orchestrator
+# Squad v4.1 — Parallel Expert Agent Orchestrator
 
 코드베이스를 다각도로 분석하는 11개 전문가 에이전트를 자율 편성하여 병렬 실행하는 Claude Code 플러그인.
 
@@ -6,12 +6,13 @@
 
 - **11 Expert Agents** — CleanCode, Architect, BugHunter, TypeGuard, PerfTuner, TestExpert, ReactPro, RustSage, DocWriter, CodeExplorer, CodeFixer
 - **Confidence Scoring** — 0-100 신뢰도, 80 미만 자동 필터링으로 노이즈 제거
-- **7 Commands** — analyze, fix, build, review, team, init, reject
+- **8 Commands** — analyze, fix, build, review, team, init, reject, learn
 - **Build Mode** — ralph-style implement-until-done 루프
 - **PR Review** — 4-에이전트 병렬 리뷰 + confidence scoring
 - **Self-Correction Loop** — N-pass 자기 교정으로 수정 품질 보장
 - **Anti-Drift + Critical Consensus** — 목표 이탈 방지, critical 교차 검증
-- **Hooks** — JSON 검증, build 루프 지속, analyze 모드 수정 차단
+- **Hooks** — JSON 검증, build 루프 지속, analyze 모드 수정 차단, 수정 추적, 컴팩션 전 학습 저장
+- **Self-Learning System** — 수정 이력 추적, 리버트 자동 감지, 에이전트 정확도 스코어링, 핫스팟 파일 식별
 - **Persistent Learning** — 프로젝트별 false positive/컨벤션 학습
 
 ## Installation
@@ -50,6 +51,7 @@ claude
 | `/squad:team src/` | Team 모드 (대규모 병렬) |
 | `/squad:init` | 프로젝트 학습 초기화 |
 | `/squad:reject {finding}` | False positive 등록 |
+| `/squad:learn` | 학습 통계 대시보드 |
 
 ## Expert Agents
 
@@ -76,15 +78,42 @@ claude
 | **CodeExplorer** | 코드베이스 탐색 |
 | **CodeFixer** | 배치 자동 수정 |
 
+## Self-Learning System
+
+Squad는 사용할수록 정확도가 향상되는 자기 학습 시스템을 내장하고 있습니다.
+
+### 작동 원리
+
+1. **수정 추적** — `PostToolUse` 훅이 fix/build 모드의 모든 Edit을 `fix-history.jsonl`에 기록
+2. **리버트 감지** — 다음 fix 실행 시 이전 수정이 되돌려졌는지 자동 감지, false positive로 등록
+3. **에이전트 스코어링** — 수정 유지 시 +1점, 리버트 시 -5점으로 정확도 자동 조정
+4. **적응형 임계값** — 점수가 낮은 에이전트는 confidence 임계값이 자동 상향되어 노이즈 감소
+5. **핫스팟 식별** — 반복 수정 파일을 식별하여 집중 분석 대상으로 지정
+6. **세션 생존** — `PreCompact` 훅이 컴팩션 전 세션 요약을 저장하여 컨텍스트 유실 방지
+
+### 학습 데이터
+
+```
+.claude/squad-memory/
+├── project-profile.md        # 프로젝트 특성
+├── false-positives.md        # 반복 false positive 패턴
+├── agent-effectiveness.md    # 에이전트별 정확도 (0-100)
+├── convention-overrides.md   # 프로젝트 특화 룰 오버라이드
+├── fix-history.jsonl         # 수정 이력 (자동 기록)
+└── session-summary.md        # 세션 요약 (자동 기록)
+```
+
+`/squad:learn`으로 학습 통계를 확인할 수 있습니다.
+
 ## Structure
 
 ```
 squad/
 ├── .claude-plugin/plugin.json    # Plugin manifest
-├── commands/                     # 7 slash commands
+├── commands/                     # 8 slash commands
 ├── skills/squad-auto/SKILL.md    # Auto-trigger skill
 ├── agents/                       # 11 agent definitions
-├── hooks/                        # Hook scripts
+├── hooks/                        # Hook scripts (5 hooks)
 ├── references/                   # Shared references (DRY)
 ├── install.sh
 └── uninstall.sh

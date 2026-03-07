@@ -9,6 +9,15 @@
             "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/validate-output.sh"
           }
         ]
+      },
+      {
+        "matcher": "Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/track-fix.sh"
+          }
+        ]
       }
     ],
     "PreToolUse": [
@@ -18,6 +27,17 @@
           {
             "type": "command",
             "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/guard-plan-mode.sh"
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/pre-compact.sh"
           }
         ]
       }
