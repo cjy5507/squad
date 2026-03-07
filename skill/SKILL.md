@@ -308,7 +308,8 @@ DONE: TM1 → LEAD | files:5 findings:3C,5M score:7/10
 | 키워드 | 모드 |
 |--------|------|
 | "분석", "리뷰", "체크" | A (분석) |
-| "수정", "고쳐", "fix", "auto" | B (Auto-Fix) |
+| "수정", "고쳐", "fix", "auto" | B (Auto-Fix, 2-pass, sonnet) |
+| "best", "최고", "max", "pro" | B (Auto-Fix, 3-pass, opus) — `--thorough --model opus` 자동 적용 |
 | "테스트", "TDD", "커버리지" | C (TDD) |
 | "리팩토링", "정리", "refactor" | D (리팩토링) |
 | "team", "팀", "병렬 구현", "대규모" | T (Team) |
@@ -355,15 +356,14 @@ A(분석) → B(수정, Critical시만) → C(TDD) → D(리팩토링, 승인 �
 
 ```
 /squad src/hooks/                           # 분석 (자동 편성)
-/squad fix src/hooks/                       # Auto-Fix (2-pass)
-/squad fix --thorough src/hooks/            # Auto-Fix (3-pass)
-/squad fix --model opus src/hooks/          # 전원 opus 강제
+/squad fix src/hooks/                       # Auto-Fix (2-pass, sonnet)
+/squad best src/hooks/                      # 최고 품질 (3-pass, opus)
+/squad fix --thorough src/hooks/            # Auto-Fix (3-pass, sonnet)
 /squad fix --experts CleanCode,BugHunter .  # 특정 전문가만
 /squad tdd src/components/                  # TDD 생성
 /squad refactor src/lib/                    # 리팩토링
 /squad batch src/                           # 전체 배치
 /squad team src/                            # Team 모드
-/squad team --delegate --teammates 3 src/   # Team Delegate 모드
 /squad init                                 # 학습 디렉토리 초기화
 ```
 
