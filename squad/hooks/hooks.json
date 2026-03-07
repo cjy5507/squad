@@ -80,7 +80,9 @@
             "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/build-loop.sh"
           }
         ]
-      },
+      }
+    ],
+    "SessionEnd": [
       {
         "matcher": "",
         "hooks": [

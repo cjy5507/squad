@@ -1,6 +1,6 @@
 #!/bin/bash
 # worktree-cleanup.sh — 세션 종료 시 남은 squad worktree 자동 정리
-# Stop hook, matcher: ""
+# SessionEnd hook, matcher: ""
 
 # .squad-worktree-* 패턴의 worktree 목록 확인
 WORKTREES=$(git worktree list --porcelain 2>/dev/null | grep 'worktree' | awk '{print $2}' | grep '\.squad-worktree-' 2>/dev/null)
