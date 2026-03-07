@@ -1,7 +1,7 @@
 ---
 name: build
 description: 구현 루프 — Explore→Plan→Implement→Verify 사이클을 완료까지 반복합니다. (ralph-style)
-argument-hint: "<task-description> [--max-iter N]"
+argument-hint: "<task-description> [--max-iter N] [--worktree]"
 ---
 
 # /squad:build — 구현 루프 (implement-until-done)
@@ -14,6 +14,18 @@ argument-hint: "<task-description> [--max-iter N]"
 ## 옵션
 
 - `--max-iter N` — 최대 반복 횟수 지정 (기본값: 10). 이 횟수에 도달하면 build-loop이 자동 종료됩니다.
+- `--worktree` — Git worktree 격리 실행. 완료 후 diff 표시 + 메인 브랜치 적용 확인.
+
+## Worktree 격리 (--worktree 옵션 시)
+
+1. `git worktree add .squad-worktree-{timestamp} HEAD` 로 격리 환경 생성
+2. worktree 경로에서 Phase 1~4 실행
+3. 완료 후 `git diff HEAD` 로 변경사항 표시
+4. 사용자에게 확인: "변경사항을 메인 브랜치에 적용할까요? (y/n)"
+5. 확인 시: 파일 복사 또는 `git cherry-pick` 으로 적용
+6. `git worktree remove .squad-worktree-{timestamp}` 로 자동 정리
+
+**--worktree 없으면** 현재 경로에서 바로 실행.
 
 ## 상태 관리
 

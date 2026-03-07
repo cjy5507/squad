@@ -1,0 +1,97 @@
+---
+name: compound
+description: 세션 학습 정리 — 이번 세션에서 배운 패턴을 분석하고 프로젝트 지식으로 통합합니다.
+argument-hint: ""
+---
+
+# /squad:compound — 세션 학습 자동 정리
+
+이번 세션의 수정 패턴과 관찰을 분석하여 프로젝트 지식으로 통합합니다.
+
+## 동작 조건
+
+`.claude/squad-memory/` 디렉토리가 존재해야 합니다.
+없으면: "메모리가 없습니다. /squad:init을 먼저 실행하세요." 출력 후 종료.
+
+## 실행 절차
+
+### Step 1: 이번 세션 수정 패턴 분석
+
+`fix-history.jsonl`에서 이번 세션 수정 기록 읽기:
+- 오늘 날짜 기준으로 필터링 (`jq 'select(.timestamp | startswith("오늘날짜"))'`)
+- 에이전트별 수정 횟수 집계
+- 반복 수정된 파일 식별 (2회 이상)
+- 공통 severity 패턴 파악
+
+### Step 2: 이번 세션 관찰 분석
+
+`observations.jsonl`에서 이번 세션 관찰 읽기:
+- 가장 많이 사용된 tool 집계
+- 반복적으로 접근한 파일 목록
+- 오류 패턴 (tool_response에 "error" 포함)
+
+### Step 3: 반복 패턴 → convention-overrides.md 제안
+
+반복된 수정 패턴 발견 시 (동일 파일 3회 이상, 동일 패턴 2회 이상):
+
+```
+[발견] 반복 패턴 감지:
+- src/api/handlers.ts에서 3회 동일 수정 (bug-hunter: error handling)
+
+convention-overrides.md에 추가할까요?
+## bug-hunter
+- API 핸들러의 try-catch 패턴은 이미 프로젝트 컨벤션으로 허용됨 (compound 자동 감지, {날짜})
+
+(y/n)
+```
+
+사용자 확인 후 `.claude/squad-memory/convention-overrides.md`에 추가.
+
+### Step 4: 새 패턴 → project-profile.md 업데이트 제안
+
+탐색한 파일에서 새 기술/패턴 감지 시:
+- 기존 `project-profile.md`와 비교
+- 신규 프레임워크, 라이브러리, 패턴 발견 시 제안:
+
+```
+[발견] project-profile.md에 없는 패턴:
+- Zod 스키마 검증 패턴 감지 (src/validation/*.ts)
+
+project-profile.md에 추가할까요?
+(y/n)
+```
+
+사용자 확인 후 업데이트.
+
+### Step 5: learnings.md에 정리 저장
+
+`.claude/squad-memory/learnings.md`에 이번 세션 학습 내용 저장 (항상 실행, 확인 불필요):
+
+```markdown
+## Session: {timestamp}
+
+### 수정 통계
+- 총 수정: N건
+- 가장 활발한 에이전트: {agent} ({N}건)
+- 핫스팟 파일: {file} ({N}회)
+
+### 발견된 패턴
+- [패턴 1]
+- [패턴 2]
+
+### convention-overrides 추가: {Y/N}
+### project-profile 업데이트: {Y/N}
+```
+
+## 최종 리포트
+
+```
+=== Compound 결과 ===
+분석된 수정: N건 | 관찰: M건
+반복 패턴: K개 발견
+convention-overrides: X개 추가
+project-profile: Y개 업데이트
+learnings.md: 저장 완료
+
+Squad가 이 프로젝트를 더 잘 이해하게 되었습니다.
+```

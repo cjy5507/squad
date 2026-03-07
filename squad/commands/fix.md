@@ -1,14 +1,32 @@
 ---
 name: fix
 description: 자동 수정 — 분석 결과를 기반으로 코드를 자동 수정하고 자기 교정 루프로 품질을 보장합니다.
-argument-hint: "<target-path> [--thorough]"
+argument-hint: "<target-path> [--thorough] [--worktree]"
 ---
 
 # /squad:fix — 자동 수정 + 자기 교정 루프
 
 분석 → 배치 수정 → 검증 → 자기 교정 루프를 실행합니다.
 
+## 옵션
+
+- `--thorough` — 3-pass 철저 모드 (기본 2-pass)
+- `--worktree` — Git worktree 격리 실행 (안전 모드)
+
 ## 실행 절차
+
+### 0. Worktree 격리 (--worktree 옵션 시)
+
+`--worktree` 옵션이 있으면:
+
+1. `git worktree add .squad-worktree-{timestamp} HEAD` 로 격리 환경 생성
+2. worktree 경로에서 Step 1~4 실행
+3. 완료 후 `git diff HEAD` 로 변경사항 표시
+4. 사용자에게 확인: "변경사항을 메인 브랜치에 적용할까요? (y/n)"
+5. 확인 시: `git cherry-pick` 또는 파일 직접 복사로 적용
+6. `git worktree remove .squad-worktree-{timestamp}` 로 자동 정리
+
+**--worktree 없으면** Step 1부터 바로 시작.
 
 ### 1. 분석 (analyze와 동일)
 
