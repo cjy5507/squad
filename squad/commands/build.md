@@ -71,15 +71,16 @@ Agent 도구를 호출하여 실행 계획을 수립합니다:
   ```
 - 완료 후 "계획 완료: N개 파일, M개 변경사항"만 반환
 
-## Phase 2.5: 리버트 감지 + false-positive 필터링
+## Phase 2.5: 이전 수정 실패 감지 + 필터링
 
 구현 전 `.claude/squad-memory/` 디렉토리가 존재하면:
-1. `fix-history.jsonl`과 `git log`를 대조하여 사용자가 이전에 되돌린 수정을 감지
-2. 리버트 감지 시 `false-positives.md`에 자동 등록 + `agent-effectiveness.md` 점수 -5
-3. `squad-plan.json`의 변경사항 중 false-positive 패턴에 매칭되는 항목을 **제외**
-4. 제외된 항목은 "SKIPPED: false-positive" 로그 남김
-
-이 단계로 "수정→사용자 되돌림→또 수정" 무한 루프를 방지합니다.
+1. `squad-plan.json`의 변경사항과 `fix-history.jsonl`을 대조
+2. 동일 file + 유사 패턴이 이전에 수정된 기록이 있으면 = **이전 수정 실패**
+3. 실패 감지 시:
+   - `agent-effectiveness.md`에서 이전 수정 에이전트 점수 -5
+   - 해당 변경사항을 **다른 에이전트**에게 재배정하거나 다른 접근법 사용
+   - 이전 수정과 동일한 `old_string`/`new_string` 반복 금지
+4. 동일 패턴 **3회 이상** 실패 → `false-positives.md` 등록 + 구현 대상에서 제외
 
 ## Phase 3: Implement
 

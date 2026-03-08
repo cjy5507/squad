@@ -36,20 +36,22 @@ argument-hint: "<target-path> [--thorough] [--worktree]"
 메인 컨텍스트에는 요약(항목 수 + critical/major title만)만 유지합니다.
 confidence < 80인 발견은 필터링.
 
-### 1.5. 리버트 감지 + false-positive 필터링
+### 1.5. 이전 수정 실패 감지 + 필터링
 
-**수정 전 리버트 자동 감지 (필수):**
-`fix-history.jsonl`과 `git log`를 대조하여 사용자가 이전에 되돌린 수정을 감지합니다:
-1. `fix-history.jsonl`에서 이전 수정 기록 읽기
-2. 각 기록의 파일에 대해 `git log --diff-filter=M --since={수정일}` 확인
-3. squad 수정 후 사용자 커밋에서 **동일 라인 범위**가 변경 → 리버트로 판단
-4. 리버트 감지 시 `false-positives.md`에 자동 등록 + `agent-effectiveness.md` 점수 -5
+**재요청 = 이전 수정 실패 (필수 체크):**
+수정 시작 전 현재 findings와 `fix-history.jsonl`을 대조합니다:
+1. 현재 findings의 각 항목(file + 유사 패턴)이 fix-history에 이미 수정 기록이 있는지 확인
+2. 매칭 = 이전에 수정했는데 같은 이슈가 다시 발견됨 = **이전 수정 실패**
+3. 실패 감지 시:
+   - `agent-effectiveness.md`에서 이전 수정 에이전트 점수 -5
+   - 해당 finding을 **다른 에이전트**에게 재배정하거나, 이전과 **다른 접근법**으로 수정
+   - 이전 수정의 `old_string`/`new_string`을 참고하여 같은 수정을 반복하지 않음
+4. 동일 파일+동일 패턴 **3회 이상** 실패:
+   - `false-positives.md`에 자동 등록 (자동 수정 불가 판정)
+   - 수정 대상에서 제외, `[SKIPPED: 3회 실패 — 수동 검토 필요]`로 보고
 
-**findings 필터링:**
-`false-positives.md`를 읽고, findings 중 false-positive 패턴에 매칭되는 항목을 **수정 대상에서 제외**합니다.
-제외된 항목은 리포트에 `[SKIPPED: false-positive]`로 표시합니다.
-
-이 단계로 "수정→사용자 되돌림→또 수정" 무한 루프를 방지합니다.
+**false-positives.md 필터링:**
+`false-positives.md`에 등록된 패턴과 매칭되는 findings을 수정 대상에서 제외합니다.
 
 ### 2. 배치 수정
 
@@ -104,27 +106,17 @@ maxIterations 도달 시 → "자동 수정 불가, 수동 검토 필요" 탈출
 **컨텍스트 규칙:** 각 반복에서 에이전트 분석은 서브에이전트로 격리 실행.
 findings 전체를 메인 컨텍스트에 출력하지 않습니다. 파일로만 전달합니다.
 
-### 5. 리버트 감지 (자기 학습)
+### 5. 수정 결과 학습 (자기 학습)
 
-`.claude/squad-memory/` 디렉토리가 존재하면 자기 학습을 수행합니다:
+`.claude/squad-memory/` 디렉토리가 존재하면 이번 수정 결과를 학습합니다:
 
-**수정 이력 대조:**
-- `fix-history.jsonl`에서 이전 수정 기록을 읽음
-- 각 수정 기록의 파일에 대해 `git log --oneline --diff-filter=M --since={수정일}` 결과와 대조
-- 이전 squad 수정이 사용자 커밋에서 **동일 라인 범위**가 변경된 경우에만 잠재적 리버트로 판단
-- 단순 파일 수정만으로 리버트로 판단하지 않음 (다른 영역 변경은 무시)
-
-**리버트 감지 시 자동 처리:**
-- 해당 패턴을 `false-positives.md`에 자동 등록:
-  ```markdown
-  ## {에이전트명}
-  - `{패턴}`: 사용자가 수정을 되돌림 (자동 감지, {날짜})
-  ```
-- `agent-effectiveness.md`에서 해당 에이전트 점수를 -5 차감
+**이번 수정 기록 저장:**
+- 이번에 적용된 모든 수정이 `fix-history.jsonl`에 기록됨 (track-fix.sh 자동)
+- 다음 실행 시 Step 1.5에서 이 기록과 새 findings를 대조하여 실패를 감지
 
 **에이전트 정확도 업데이트:**
-- 성공적으로 유지된 수정 → 해당 에이전트 점수 +1 (최대 100)
-- 리버트된 수정 → 해당 에이전트 점수 -5 (최소 0)
+- 자기 교정 루프(Step 4)를 통과한 수정 → 해당 에이전트 점수 +1 (최대 100)
+- Step 1.5에서 감지된 이전 실패 수정 → 이미 점수 -5 처리됨
 - 결과를 `agent-effectiveness.md`에 기록
 
 ### 6. 최종 리포트

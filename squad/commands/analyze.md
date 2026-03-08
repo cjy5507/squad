@@ -37,17 +37,17 @@ argument-hint: "<target-path> [--experts Agent1,Agent2]"
 이 파일들은 구조적 문제가 있을 수 있으니 더 꼼꼼히 분석하세요.
 ```
 
-**리버트 자동 감지 (false-positive 자동 등록):**
-분석 시작 전 `fix-history.jsonl`과 `git log`를 대조하여 사용자가 되돌린 수정을 감지합니다:
-1. `fix-history.jsonl`에서 이전 수정 기록 읽기
-2. 각 수정 기록의 파일에 대해 `git log --diff-filter=M --since={수정일}` 확인
-3. squad 수정 후 사용자 커밋에서 **동일 라인 범위**가 변경된 경우 → 리버트로 판단
-4. 리버트 감지 시:
-   - `false-positives.md`에 자동 등록: `{에이전트}: {패턴} — 사용자가 수정을 되돌림 (자동 감지, {날짜})`
+**이전 수정 실패 감지 (재요청 = 이전 수정이 틀렸다는 신호):**
+분석 완료 후 (Step 4 이후), 현재 findings와 `fix-history.jsonl`을 대조합니다:
+1. 현재 findings의 각 항목(file + 유사 패턴)이 `fix-history.jsonl`에 이미 수정 기록이 있는지 확인
+2. 매칭 발견 = 이전에 수정했는데 같은 이슈가 다시 나옴 = **이전 수정이 실패**
+3. 실패한 수정 감지 시:
    - `agent-effectiveness.md`에서 해당 에이전트 점수 -5
-   - 이후 분석에서 이 패턴은 자동으로 무시됨
-
-이 단계는 `/squad-fix`에서도 실행되지만, `/squad-analyze` 단독 실행 시에도 학습이 누적되도록 여기서도 실행합니다.
+   - 해당 finding에 `previously_failed: true`, `failed_agent: "{에이전트명}"` 태그 추가
+   - findings.json에 저장 시 이 태그 포함 → fix 단계에서 **다른 에이전트** 또는 **다른 접근법**을 사용
+4. 동일 파일+동일 패턴으로 **3회 이상** 실패한 경우:
+   - `false-positives.md`에 자동 등록 (이 패턴은 자동 수정 불가로 판단)
+   - 이후 분석에서 이 패턴은 `[수동 검토 필요]`로만 보고, 자동 수정 대상에서 제외
 
 **convention-overrides.md**: 프로젝트 특화 룰 오버라이드를 에이전트 프롬프트에 주입:
 ```

@@ -74,9 +74,9 @@ jq -r 'select(.timestamp | startswith("오늘날짜")) | .agent' .claude/squad-m
 
 **점수 업데이트 규칙:**
 - 각 에이전트의 Total Fixes += 이번 세션 수정 건수
-- `git log --diff-filter=M --since="마지막 세션 날짜"` 결과와 fix-history 대조
-- 동일 파일의 **동일 라인 범위**가 사용자 커밋에서 변경된 경우 → Reverts += 1, Score -= 5
-- 리버트 없이 유지된 수정 → Score += 1 (최대 100)
+- fix-history.jsonl과 최근 squad-findings.json을 대조:
+  - 이전에 수정한 이슈가 다시 findings에 나타남 = **수정 실패** → Failed += 1, Score -= 5
+  - 다시 나타나지 않음 = 수정 성공 → Score += 1 (최대 100)
 - Last Updated = 오늘 날짜
 
 agent-effectiveness.md 테이블을 직접 Edit 도구로 업데이트합니다 (확인 불필요).
