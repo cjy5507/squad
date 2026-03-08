@@ -6,9 +6,17 @@
 INPUT=$(cat)
 TOOL_NAME=$(echo "$INPUT" | jq -r '.tool_name // empty')
 
-# Edit 또는 Write가 아니면 패스
+# Edit, Write, 또는 Bash가 아니면 패스
 case "$TOOL_NAME" in
   Edit|Write) ;;
+  Bash)
+    # Bash 명령에서 파일 쓰기 패턴 감지
+    BASH_CMD=$(echo "$INPUT" | jq -r '.tool_input.command // ""' 2>/dev/null)
+    case "$BASH_CMD" in
+      *'>'*|*tee*|*'dd '*|*cp\ *|*mv\ *|*install\ *) ;;
+      *) exit 0 ;;
+    esac
+    ;;
   *) exit 0 ;;
 esac
 

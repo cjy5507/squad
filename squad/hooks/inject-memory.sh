@@ -41,7 +41,9 @@ if [ -n "$STATUS" ]; then
   PARTS="$RESUME"
 fi
 
-# Part 2: 최근 관찰 50개 주입 (observations.jsonl 존재 시)
+# Part 2: 최근 관찰 주입 (observations.jsonl 존재 시)
+# capture-memory.sh 로테이션은 tail -250이므로 주입도 최대 250개까지 읽되,
+# 출력 크기 제한을 위해 최근 50개만 표시
 if [ -f "$OBS_FILE" ] && [ -s "$OBS_FILE" ]; then
   RECENT=$(tail -50 "$OBS_FILE" | jq -r '"[\(.timestamp)] \(.tool)\(if .file != "" then " (\(.file))" else "" end): \(.input_summary)" ' 2>/dev/null | tr -d '\000-\010\013-\037')
   if [ -n "$RECENT" ]; then

@@ -100,6 +100,11 @@ Agent 도구로 plan-architect 에이전트 호출:
 1. `.claude/squad-memory/plan.md` — 사람이 읽을 수 있는 마크다운
 2. `.claude/squad-plan.json` — `/squad-build` Phase 3에서 바로 실행 가능한 JSON
 
+**squad-plan.json 스키마** (build.md Phase 2와 동일한 공유 스키마):
+```json
+[{"file": "경로", "changes": [{"line": N, "old_string": "현재코드", "new_string": "수정코드", "reason": "이유", "severity": "critical|major|minor"}]}]
+```
+
 `.claude/squad-memory/plan.md`에 저장:
 
 ```markdown

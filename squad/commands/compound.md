@@ -18,7 +18,7 @@ argument-hint: ""
 ### Step 1: 이번 세션 수정 패턴 분석
 
 `fix-history.jsonl`에서 이번 세션 수정 기록 읽기:
-- 오늘 날짜 기준으로 필터링 (`jq 'select(.timestamp | startswith("오늘날짜"))'`)
+- 오늘 날짜 기준으로 필터링 (`jq --arg today "$(date -u +%Y-%m-%d)" 'select(.timestamp | startswith($today))'`)
 - 에이전트별 수정 횟수 집계
 - 반복 수정된 파일 식별 (2회 이상)
 - 공통 severity 패턴 파악
@@ -26,6 +26,7 @@ argument-hint: ""
 ### Step 2: 이번 세션 관찰 분석
 
 `observations.jsonl`에서 이번 세션 관찰 읽기:
+- 오늘 날짜(UTC) 기준으로 필터링 (`jq --arg today "$(date -u +%Y-%m-%d)" 'select(.timestamp | startswith($today))'`)
 - 가장 많이 사용된 tool 집계
 - 반복적으로 접근한 파일 목록
 - 오류 패턴 (tool_response에 "error" 포함)
@@ -69,7 +70,7 @@ project-profile.md에 추가할까요?
 
 ```bash
 # 이번 세션 수정 기록에서 에이전트별 수정 건수 집계
-jq -r 'select(.timestamp | startswith("오늘날짜")) | .agent' .claude/squad-memory/fix-history.jsonl | sort | uniq -c
+jq -r --arg today "$(date -u +%Y-%m-%d)" 'select(.timestamp | startswith($today)) | .agent' .claude/squad-memory/fix-history.jsonl | sort | uniq -c
 ```
 
 **점수 업데이트 규칙:**

@@ -33,6 +33,11 @@ while IFS= read -r WT_PATH; do
     fi
   fi
 
+  # --force 삭제 전 백업 검증: dirty worktree인데 백업이 없으면 삭제하지 않음
+  if [ -n "$DIRTY" ] && [ ! -f "$BACKUP" ]; then
+    echo "ERROR: dirty worktree 백업 파일이 생성되지 않았습니다. worktree 보존: $WT_PATH" >&2
+    continue
+  fi
   git worktree remove --force "$WT_PATH" 2>/dev/null
 done <<< "$WORKTREES"
 
