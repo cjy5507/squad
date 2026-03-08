@@ -8,9 +8,6 @@ argument-hint: "<task-description> [--max-iter N] [--worktree]"
 
 요청된 작업을 탐색→계획→구현→검증 사이클로 완료까지 반복합니다.
 
-**절대 중간에 멈추지 마라. 사용자 입력을 기다리지 마라.**
-**Phase 1~4를 한 번의 실행으로 전부 완료하라.**
-
 ## 옵션
 
 - `--max-iter N` — 최대 반복 횟수 지정 (기본값: 10). 이 횟수에 도달하면 build-loop이 자동 종료됩니다.
@@ -43,6 +40,27 @@ max_iter: {N | 10}
 `--max-iter N` 옵션이 있으면 `max_iter: N`으로 설정, 없으면 `max_iter: 10`.
 각 Phase 완료 시 상태 업데이트. 컴팩션 복구에 사용.
 
+## Phase 0: 세션 복구 감지
+
+**이 단계가 가장 먼저 실행됩니다.**
+
+기존 파일 존재 여부로 이전 세션에서 어디까지 진행했는지 판단합니다:
+
+```
+1. .claude/squad-plan.json 존재 → Phase 3 (Implement)부터 시작
+2. .claude/squad-explore.md 존재 + plan.json 없음 → Phase 2 (Plan)부터 시작
+3. .claude/squad-findings.json 존재 + 위 없음 → Phase 2부터 시작 (분석 결과 활용)
+4. 아무것도 없음 → Phase 1 (Explore)부터 시작
+```
+
+**복구 시 메시지:**
+```
+[Squad Build] 이전 세션 감지: {존재하는 파일 목록}
+→ Phase {N}부터 재개합니다. (깨끗한 컨텍스트에서 구현 시작)
+```
+
+이전 세션의 탐색/분석/계획 결과가 파일에 저장되어 있으므로, 컨텍스트 없이도 정확한 구현이 가능합니다.
+
 ## Phase 1: Explore
 
 Agent 도구로 code-explorer 에이전트를 호출합니다:
@@ -71,6 +89,26 @@ Agent 도구를 호출하여 실행 계획을 수립합니다:
   ```
 - 완료 후 "계획 완료: N개 파일, M개 변경사항"만 반환
 
+### Phase 2 완료 후: 세션 분리 판단
+
+**컨텍스트 보호 원칙: 계획까지만 하고 구현은 깨끗한 세션에서.**
+
+Phase 2 완료 시 다음 메시지를 출력하고 **구현을 시작하지 않습니다:**
+
+```
+✅ Phase 2 완료 — 계획이 저장되었습니다.
+
+저장된 파일:
+- .claude/squad-plan.json (구현 계획)
+- .claude/squad-explore.md (탐색 결과)
+- .claude/squad-findings.json (분석 결과, 있는 경우)
+
+👉 다음 세션에서 `/squad-build`를 다시 실행하면 깨끗한 컨텍스트에서 Phase 3(구현)부터 시작합니다.
+   지금 바로 구현하려면 `/squad-build --now`를 입력하세요.
+```
+
+**예외: `--now` 옵션이 있으면** 세션을 나누지 않고 Phase 3으로 바로 진행합니다.
+
 ## Phase 2.5: 이전 수정 실패 감지 + 필터링
 
 구현 전 `.claude/squad-memory/` 디렉토리가 존재하면:
@@ -84,11 +122,15 @@ Agent 도구를 호출하여 실행 계획을 수립합니다:
 
 ## Phase 3: Implement
 
-Agent 도구로 code-fixer 에이전트를 호출합니다:
+**이 단계는 반드시 Agent 도구(서브에이전트)로 격리 실행합니다.**
+
+구현 에이전트는 깨끗한 컨텍스트에서 시작하여 파일만 읽고 작업합니다:
 - `.claude/squad-plan.json`을 읽어서 모든 변경사항을 실행 (Phase 2.5에서 필터링된 항목 제외)
 - 수정 규칙: 심각도순, 라인역순, old_string 검증
 - **각 변경사항 적용 전** `.claude/squad-state.md`에 `agent:`, `severity:`, `title:` 필드를 업데이트 (track-fix.sh 이력 추적용)
 - 완료 후 적용/스킵/실패 건수만 반환
+
+메인 컨텍스트에는 구현 결과 요약(적용/스킵/실패 건수)만 유지합니다.
 
 ## Phase 4: Verify
 
