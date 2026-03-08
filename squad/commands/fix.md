@@ -36,6 +36,21 @@ argument-hint: "<target-path> [--thorough] [--worktree]"
 메인 컨텍스트에는 요약(항목 수 + critical/major title만)만 유지합니다.
 confidence < 80인 발견은 필터링.
 
+### 1.5. 리버트 감지 + false-positive 필터링
+
+**수정 전 리버트 자동 감지 (필수):**
+`fix-history.jsonl`과 `git log`를 대조하여 사용자가 이전에 되돌린 수정을 감지합니다:
+1. `fix-history.jsonl`에서 이전 수정 기록 읽기
+2. 각 기록의 파일에 대해 `git log --diff-filter=M --since={수정일}` 확인
+3. squad 수정 후 사용자 커밋에서 **동일 라인 범위**가 변경 → 리버트로 판단
+4. 리버트 감지 시 `false-positives.md`에 자동 등록 + `agent-effectiveness.md` 점수 -5
+
+**findings 필터링:**
+`false-positives.md`를 읽고, findings 중 false-positive 패턴에 매칭되는 항목을 **수정 대상에서 제외**합니다.
+제외된 항목은 리포트에 `[SKIPPED: false-positive]`로 표시합니다.
+
+이 단계로 "수정→사용자 되돌림→또 수정" 무한 루프를 방지합니다.
+
 ### 2. 배치 수정
 
 code-fixer 에이전트에 위임. `mode: "acceptEdits"`.

@@ -71,10 +71,20 @@ Agent 도구를 호출하여 실행 계획을 수립합니다:
   ```
 - 완료 후 "계획 완료: N개 파일, M개 변경사항"만 반환
 
+## Phase 2.5: 리버트 감지 + false-positive 필터링
+
+구현 전 `.claude/squad-memory/` 디렉토리가 존재하면:
+1. `fix-history.jsonl`과 `git log`를 대조하여 사용자가 이전에 되돌린 수정을 감지
+2. 리버트 감지 시 `false-positives.md`에 자동 등록 + `agent-effectiveness.md` 점수 -5
+3. `squad-plan.json`의 변경사항 중 false-positive 패턴에 매칭되는 항목을 **제외**
+4. 제외된 항목은 "SKIPPED: false-positive" 로그 남김
+
+이 단계로 "수정→사용자 되돌림→또 수정" 무한 루프를 방지합니다.
+
 ## Phase 3: Implement
 
 Agent 도구로 code-fixer 에이전트를 호출합니다:
-- `.claude/squad-plan.json`을 읽어서 모든 변경사항을 실행
+- `.claude/squad-plan.json`을 읽어서 모든 변경사항을 실행 (Phase 2.5에서 필터링된 항목 제외)
 - 수정 규칙: 심각도순, 라인역순, old_string 검증
 - **각 변경사항 적용 전** `.claude/squad-state.md`에 `agent:`, `severity:`, `title:` 필드를 업데이트 (track-fix.sh 이력 추적용)
 - 완료 후 적용/스킵/실패 건수만 반환
