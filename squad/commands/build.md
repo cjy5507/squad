@@ -53,9 +53,11 @@ Agent 도구로 code-explorer 에이전트를 호출합니다:
 
 ## Phase 2: Plan
 
+**기존 계획 확인:** `.claude/squad-memory/plan.md` 파일이 존재하면 이를 읽어 컨텍스트로 활용합니다 (`/squad:plan`에서 생성된 계획). 없으면 처음부터 계획을 수립합니다.
+
 Agent 도구를 호출하여 실행 계획을 수립합니다:
 - 작업: {task-description}
-- 컨텍스트: Phase 1 요약의 파일 목록
+- 컨텍스트: Phase 1 요약의 파일 목록 (+ 기존 plan.md가 있으면 포함)
 - 소스 코드를 수정하지 말고, 계획 파일만 작성합니다
 - Write 도구로 `.claude/squad-plan.json`에 저장:
   ```json
@@ -68,6 +70,7 @@ Agent 도구를 호출하여 실행 계획을 수립합니다:
 Agent 도구로 code-fixer 에이전트를 호출합니다:
 - `.claude/squad-plan.json`을 읽어서 모든 변경사항을 실행
 - 수정 규칙: 심각도순, 라인역순, old_string 검증
+- **각 변경사항 적용 전** `.claude/squad-state.md`에 `agent:`, `severity:`, `title:` 필드를 업데이트 (track-fix.sh 이력 추적용)
 - 완료 후 적용/스킵/실패 건수만 반환
 
 ## Phase 4: Verify

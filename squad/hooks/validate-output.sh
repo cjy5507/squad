@@ -34,8 +34,14 @@ RESULT=$(echo "$INPUT" | jq -r '
 ' 2>/dev/null)
 
 case "$RESULT" in
-  INVALID_JSON) echo "WARNING: 에이전트가 유효한 JSON을 반환하지 않았습니다." >&2 ;;
-  MISSING_FIELDS) echo "WARNING: JSON에 agent 또는 findings 필드가 누락되었습니다." >&2 ;;
+  INVALID_JSON)
+    echo "WARNING: 에이전트가 유효한 JSON을 반환하지 않았습니다." >&2
+    jq -cn '{addToConversation:"[Squad WARNING] 에이전트가 유효한 JSON을 반환하지 않았습니다. 에이전트 출력을 확인하고 JSON 형식으로 재요청하세요."}'
+    ;;
+  MISSING_FIELDS)
+    echo "WARNING: JSON에 agent 또는 findings 필드가 누락되었습니다." >&2
+    jq -cn '{addToConversation:"[Squad WARNING] 에이전트 JSON에 agent 또는 findings 필드가 누락되었습니다. json-contract.md 형식을 확인하세요."}'
+    ;;
 esac
 
 exit 0

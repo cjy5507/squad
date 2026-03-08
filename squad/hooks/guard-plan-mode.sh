@@ -21,7 +21,13 @@ while IFS= read -r line; do
 done < "$STATE_FILE"
 case "$MODE" in
   analyze|plan|review)
-    echo '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"'"$MODE"' 모드에서는 소스 코드 수정이 금지됩니다. 읽기 전용 모드에서는 코드를 수정하지 마세요."}}'
+    # .claude/ 경로는 메타데이터 쓰기이므로 허용
+    FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // .tool_input.path // ""' 2>/dev/null)
+    case "$FILE_PATH" in
+      .claude/*|*/.claude/*) exit 0 ;;
+    esac
+    jq -cn --arg mode "$MODE" \
+      '{hookSpecificOutput:{hookEventName:"PreToolUse",permissionDecision:"deny",permissionDecisionReason:"\($mode) 모드에서는 소스 코드 수정이 금지됩니다. 읽기 전용 모드에서는 코드를 수정하지 마세요."}}'
     exit 0
     ;;
 esac

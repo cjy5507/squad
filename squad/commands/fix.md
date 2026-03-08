@@ -37,6 +37,15 @@ confidence < 80인 발견은 필터링.
 
 code-fixer 에이전트에 위임. `mode: "acceptEdits"`.
 
+**수정 전 상태 업데이트 (필수):**
+각 finding 수정 전에 `.claude/squad-state.md`에 현재 수정 대상 정보를 기록:
+```
+agent: {finding을 보고한 에이전트명}
+severity: {finding의 severity}
+title: {finding의 title/message}
+```
+이 정보는 `track-fix.sh` 훅이 수정 이력을 기록할 때 사용됩니다.
+
 수정 규칙:
 - `auto_fixable: false` → 스킵
 - `severity: info` → 스킵
@@ -78,8 +87,9 @@ maxIterations 도달 시 → "자동 수정 불가, 수동 검토 필요" 탈출
 
 **수정 이력 대조:**
 - `fix-history.jsonl`에서 이전 수정 기록을 읽음
-- `git log --oneline --diff-filter=M` 결과와 대조
-- 이전에 squad가 수정한 파일이 이후 사용자에 의해 재변경된 경우 → 잠재적 리버트로 판단
+- 각 수정 기록의 파일에 대해 `git log --oneline --diff-filter=M --since={수정일}` 결과와 대조
+- 이전 squad 수정이 사용자 커밋에서 **동일 라인 범위**가 변경된 경우에만 잠재적 리버트로 판단
+- 단순 파일 수정만으로 리버트로 판단하지 않음 (다른 영역 변경은 무시)
 
 **리버트 감지 시 자동 처리:**
 - 해당 패턴을 `false-positives.md`에 자동 등록:

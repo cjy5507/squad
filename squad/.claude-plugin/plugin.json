@@ -1,6 +1,6 @@
 {
   "name": "squad",
-  "version": "5.0.0",
+  "version": "5.1.0",
   "description": "올인원 코드 품질 플러그인 — 세션 메모리, 계획 수립, Worktree 격리, 복합 학습 내장",
   "author": {"name": "cjy5507"},
   "repository": "https://github.com/cjy5507/squad",
