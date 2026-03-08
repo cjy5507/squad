@@ -52,8 +52,11 @@ git log로 관련 커밋 히스토리 확인.
 - **Confidence 필터링:** confidence < 80 제외
 - **Severity 정렬:** critical → major → minor → info
 - **중복 제거:** 같은 file:line에 여러 에이전트 발견 → 병합
+- **결과 저장:** 통합 결과를 `.claude/squad-findings.json`에 저장 (후속 `/squad-fix`에서 재사용 가능)
 
 ### 4. 리포트
+
+**컨텍스트에는 요약만 출력합니다** (findings 상세는 파일 참조):
 
 ```markdown
 # PR Review — Squad
@@ -61,10 +64,14 @@ git log로 관련 커밋 히스토리 확인.
 ## 요약
 - 변경 파일: N개 | 추가: +X줄 | 삭제: -Y줄
 - 발견: critical A | major B | minor C
+- 결과 저장: .claude/squad-findings.json
 
 ## Critical
+{title + file:line 1줄씩}
 ## Major
+{title + file:line 1줄씩}
 ## Minor
+{건수만 표시}
 ## 개선 제안
 ```
 

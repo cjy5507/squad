@@ -89,7 +89,27 @@ guard-plan-mode.sh 훅이 analyze 모드에서 Edit/Write를 차단합니다.
 - severity: critical 발견 시 → 다른 전문가 1명에게 교차 검증
 - 양쪽 critical 동의 → 확정 | 불일치 → major 다운그레이드
 
-### 5. 리포트 출력
+### 5. 결과 저장 (컨텍스트 최적화)
+
+통합된 결과를 **파일에 저장**하여 메인 컨텍스트를 보호합니다:
+
+```
+Write 도구로 .claude/squad-findings.json에 저장:
+{
+  "timestamp": "ISO8601",
+  "target": "분석 대상 경로",
+  "agents": ["투입된 에이전트 목록"],
+  "summary": { "critical": N, "major": N, "minor": N, "info": N, "auto_fixable": N },
+  "findings": [통합된 finding 배열]
+}
+```
+
+이 파일은 `/squad-fix`, `/squad-build` 등 후속 명령에서 재사용됩니다.
+메인 컨텍스트에 findings 배열 전체를 출력하지 마세요.
+
+### 6. 리포트 출력
+
+**컨텍스트에는 요약만 출력합니다** (findings 상세는 파일 참조):
 
 ```markdown
 # Code Squad 분석 리포트
@@ -98,9 +118,13 @@ guard-plan-mode.sh 훅이 analyze 모드에서 Edit/Write를 차단합니다.
 - 분석 파일: N개 | 투입 전문가: [목록]
 - 발견 항목: critical X | major Y | minor Z | info W
 - 자동 수정 가능: N건 | 수동 필요: M건
+- 결과 저장: .claude/squad-findings.json
 
 ## Critical (교차 검증 완료)
+{critical 항목만 title + file:line 1줄씩}
 ## Major
+{major 항목만 title + file:line 1줄씩}
 ## Minor
+{minor 항목 수만 표시, 상세는 파일 참조}
 ## 전문가별 점수
 ```

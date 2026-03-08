@@ -28,9 +28,12 @@ argument-hint: "<target-path> [--thorough] [--worktree]"
 
 **--worktree 없으면** Step 1부터 바로 시작.
 
-### 1. 분석 (analyze와 동일)
+### 1. 분석
 
-전문가 에이전트 병렬 실행 → JSON 계약 결과 수집.
+**기존 분석 결과 확인:** `.claude/squad-findings.json`이 존재하면 이를 읽어 사용합니다 (`/squad-analyze`에서 생성). 없으면 analyze와 동일하게 에이전트 병렬 실행.
+
+분석 결과는 `.claude/squad-findings.json`에 저장합니다 (컨텍스트 최적화).
+메인 컨텍스트에는 요약(항목 수 + critical/major title만)만 유지합니다.
 confidence < 80인 발견은 필터링.
 
 ### 2. 배치 수정
@@ -71,15 +74,20 @@ maxIterations = requiredPasses × 3
 
 while consecutivePasses < requiredPasses && iteration < maxIterations:
   iteration++
-  results = 새 에이전트로 분석 (fresh context)
+  results = 새 에이전트로 분석 (fresh context, 서브에이전트 격리)
+  → 결과를 .claude/squad-findings.json에 덮어쓰기 (이전 반복 결과 교체)
+  → 메인 컨텍스트에는 "iteration N: X건 발견" 1줄만 유지
   if results.hasIssues():
     consecutivePasses = 0
-    fix → verify
+    fix(findings.json에서 읽기) → verify
   else:
     consecutivePasses++
 
 maxIterations 도달 시 → "자동 수정 불가, 수동 검토 필요" 탈출
 ```
+
+**컨텍스트 규칙:** 각 반복에서 에이전트 분석은 서브에이전트로 격리 실행.
+findings 전체를 메인 컨텍스트에 출력하지 않습니다. 파일로만 전달합니다.
 
 ### 5. 리버트 감지 (자기 학습)
 

@@ -95,7 +95,12 @@ Agent 도구로 plan-architect 에이전트 호출:
 - 구현 순서 및 의존성
 - 테스트 계획
 
-계획을 `.claude/squad-memory/plan.md`에 저장:
+계획을 **2가지 형식**으로 저장 (컨텍스트 최적화):
+
+1. `.claude/squad-memory/plan.md` — 사람이 읽을 수 있는 마크다운
+2. `.claude/squad-plan.json` — `/squad-build` Phase 3에서 바로 실행 가능한 JSON
+
+`.claude/squad-memory/plan.md`에 저장:
 
 ```markdown
 # 구현 계획: {기능 설명}

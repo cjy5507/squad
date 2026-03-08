@@ -48,16 +48,22 @@ max_iter: {N | 10}
 Agent 도구로 code-explorer 에이전트를 호출합니다:
 - 작업: {task-description}
 - 파악할 것: 관련 파일, 구조, 의존성, 수정 범위
-- 결과를 1000자 이내 요약으로 반환
+- **결과를 `.claude/squad-explore.md`에 저장** (1000자 이내 요약)
+- 메인 컨텍스트에는 "탐색 완료: N개 파일, 요약은 .claude/squad-explore.md" 1줄만 유지
 - 이 단계에서는 소스 코드를 수정하지 않습니다
 
 ## Phase 2: Plan
 
-**기존 계획 확인:** `.claude/squad-memory/plan.md` 파일이 존재하면 이를 읽어 컨텍스트로 활용합니다 (`/squad:plan`에서 생성된 계획). 없으면 처음부터 계획을 수립합니다.
+**기존 결과 확인 (컨텍스트 최적화):**
+1. `.claude/squad-memory/plan.md` — 기존 계획 (`/squad-plan`에서 생성)
+2. `.claude/squad-findings.json` — 기존 분석 결과 (`/squad-analyze`에서 생성)
+3. `.claude/squad-explore.md` — Phase 1 탐색 결과
+
+존재하는 파일을 읽어 컨텍스트로 활용합니다. 없으면 처음부터 계획을 수립합니다.
 
 Agent 도구를 호출하여 실행 계획을 수립합니다:
 - 작업: {task-description}
-- 컨텍스트: Phase 1 요약의 파일 목록 (+ 기존 plan.md가 있으면 포함)
+- 컨텍스트: 위 파일들의 내용 (서브에이전트가 직접 파일을 읽음)
 - 소스 코드를 수정하지 말고, 계획 파일만 작성합니다
 - Write 도구로 `.claude/squad-plan.json`에 저장:
   ```json
