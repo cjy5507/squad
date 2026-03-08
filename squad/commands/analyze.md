@@ -37,6 +37,18 @@ argument-hint: "<target-path> [--experts Agent1,Agent2]"
 이 파일들은 구조적 문제가 있을 수 있으니 더 꼼꼼히 분석하세요.
 ```
 
+**convention-overrides.md**: 프로젝트 특화 룰 오버라이드를 에이전트 프롬프트에 주입:
+```
+## 프로젝트 컨벤션 (이 규칙을 위반으로 보고하지 마세요)
+{convention-overrides.md 내용}
+```
+
+**learnings.md**: 이전 세션에서 발견된 패턴을 에이전트에게 전달:
+```
+## 이전 세션 학습 내용
+{learnings.md에서 최근 3개 세션의 "발견된 패턴" 섹션}
+```
+
 디렉토리가 없으면 이 단계를 건너뛰고 기본 설정으로 진행합니다.
 
 ### 1. Explore (사전 탐색)

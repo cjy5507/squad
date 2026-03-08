@@ -39,6 +39,18 @@ fi
 [ -z "$FILE_PATH" ] && exit 0
 : "${AGENT:=unknown}" "${SEVERITY:=unknown}" "${TITLE:=}"
 
+# Fallback: state에 agent 정보 없으면 squad-findings.json에서 조회
+if [ "$AGENT" = "unknown" ] && [ -f ".claude/squad-findings.json" ]; then
+  _FOUND=$(jq -r --arg f "$FILE_PATH" \
+    '[.findings[] | select(.file == $f)][0] // empty | "\(.agent // "unknown")|\(.severity // "unknown")|\(.title // "")"' \
+    ".claude/squad-findings.json" 2>/dev/null)
+  if [ -n "$_FOUND" ]; then
+    AGENT="${_FOUND%%|*}"; _FOUND="${_FOUND#*|}"
+    SEVERITY="${_FOUND%%|*}"
+    TITLE="${_FOUND#*|}"
+  fi
+fi
+
 TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
 # acquire 성공 후에만 trap 설정
