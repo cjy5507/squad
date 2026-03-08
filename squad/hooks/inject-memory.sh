@@ -11,13 +11,23 @@ OBS_FILE="$MEMORY_DIR/observations.jsonl"
 PARTS=""
 
 # Part 1: compact 재개 로직 (in-progress 작업 있으면 알림)
-if [ -f "$STATE_FILE" ] && grep -q "^status: in-progress" "$STATE_FILE" 2>/dev/null; then
-  MODE=$(grep '^mode:' "$STATE_FILE" 2>/dev/null | awk '{print $2}')
-  PHASE=$(grep '^phase:' "$STATE_FILE" 2>/dev/null | awk '{print $2}')
-  TASK=$(grep '^task:' "$STATE_FILE" 2>/dev/null | sed 's/^task: //')
-  ITER=$(grep '^iterations:' "$STATE_FILE" 2>/dev/null | awk '{print $2}')
-  MAX=$(grep '^max_iter:' "$STATE_FILE" 2>/dev/null | awk '{print $2}')
+if [ -f "$STATE_FILE" ]; then
+  STATUS="" MODE="" PHASE="" TASK="" ITER="" MAX=""
+  while IFS= read -r line; do
+    case "$line" in
+      status:*)     STATUS="${line#status:}"; STATUS="${STATUS# }" ;;
+      mode:*)       MODE="${line#mode:}"; MODE="${MODE# }" ;;
+      phase:*)      PHASE="${line#phase:}"; PHASE="${PHASE# }" ;;
+      task:*)       TASK="${line#task:}"; TASK="${TASK# }" ;;
+      iterations:*) ITER="${line#iterations:}"; ITER="${ITER# }" ;;
+      max_iter:*)   MAX="${line#max_iter:}"; MAX="${MAX# }" ;;
+    esac
+  done < "$STATE_FILE"
 
+  [ "$STATUS" != "in-progress" ] && STATUS=""
+fi
+
+if [ -n "$STATUS" ]; then
   RESUME="[Squad] ${MODE} 모드가 중단되었습니다. squad-state.md를 읽고 이어서 진행하세요."
   if [ -n "$PHASE" ]; then
     RESUME="${RESUME} (마지막 phase: ${PHASE}"
@@ -33,7 +43,7 @@ fi
 
 # Part 2: 최근 관찰 50개 주입 (observations.jsonl 존재 시)
 if [ -f "$OBS_FILE" ] && [ -s "$OBS_FILE" ]; then
-  RECENT=$(tail -50 "$OBS_FILE" | jq -r '"[\(.timestamp)] \(.tool)\(if .file != "" then " (\(.file))" else "" end): \(.input_summary)" ' 2>/dev/null | tr -d '\000-\031')
+  RECENT=$(tail -50 "$OBS_FILE" | jq -r '"[\(.timestamp)] \(.tool)\(if .file != "" then " (\(.file))" else "" end): \(.input_summary)" ' 2>/dev/null | tr -d '\000-\010\013-\037')
   if [ -n "$RECENT" ]; then
     OBS_MSG="이전 세션 컨텍스트 (최근 관찰):
 $RECENT"

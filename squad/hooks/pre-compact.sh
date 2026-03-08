@@ -17,9 +17,13 @@ MODE="none"
 STATUS="none"
 TASK=""
 if [ -f "$STATE_FILE" ]; then
-  MODE=$(grep '^mode:' "$STATE_FILE" 2>/dev/null | awk '{print $2}')
-  STATUS=$(grep '^status:' "$STATE_FILE" 2>/dev/null | awk '{print $2}')
-  TASK=$(grep '^task:' "$STATE_FILE" 2>/dev/null | sed 's/^task: //')
+  while IFS= read -r line; do
+    case "$line" in
+      mode:*)   MODE="${line#mode:}"; MODE="${MODE# }" ;;
+      status:*) STATUS="${line#status:}"; STATUS="${STATUS# }" ;;
+      task:*)   TASK="${line#task:}"; TASK="${TASK# }" ;;
+    esac
+  done < "$STATE_FILE"
 fi
 
 # fix-history에서 세션 통계 추출
@@ -27,7 +31,7 @@ TOTAL_FIXES=0
 AGENTS_USED=""
 if [ -f "$HISTORY_FILE" ]; then
   TOTAL_FIXES=$(wc -l < "$HISTORY_FILE" | tr -d ' ')
-  AGENTS_USED=$(jq -r '.agent' "$HISTORY_FILE" 2>/dev/null | sort -u | tr '\n' ', ' | sed 's/,$//')
+  AGENTS_USED=$(jq -rs '[.[].agent] | unique | join(",")' "$HISTORY_FILE" 2>/dev/null)
 fi
 
 # session-summary.md에 추가 (append)

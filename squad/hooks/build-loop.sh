@@ -7,48 +7,49 @@ STATE_FILE=".claude/squad-state.md"
 # state 파일 없으면 build 모드가 아님
 [ ! -f "$STATE_FILE" ] && exit 0
 
-# 완료 표시 확인
-if grep -q "^status: complete" "$STATE_FILE" 2>/dev/null; then
-  rm -f "$STATE_FILE"
-  exit 0
-fi
+# STATE_FILE 한 번 읽기로 모든 필드 파싱 (0 fork)
+STATUS="" MODE="" CURRENT_ITER="" MAX_ITER="" HAS_ITER=""
+while IFS= read -r line; do
+  case "$line" in
+    status:*)     STATUS="${line#status:}"; STATUS="${STATUS# }" ;;
+    mode:*)       MODE="${line#mode:}"; MODE="${MODE# }" ;;
+    iterations:*) CURRENT_ITER="${line#iterations:}"; CURRENT_ITER="${CURRENT_ITER# }"; HAS_ITER=1 ;;
+    max_iter:*)   MAX_ITER="${line#max_iter:}"; MAX_ITER="${MAX_ITER# }" ;;
+  esac
+done < "$STATE_FILE"
 
-if grep -q "^status: failed" "$STATE_FILE" 2>/dev/null; then
-  exit 0
-fi
+case "$STATUS" in
+  complete) rm -f "$STATE_FILE"; exit 0 ;;
+  failed|cancelled) exit 0 ;;
+esac
 
-# 취소 상태 확인
-if grep -q "^status: cancelled" "$STATE_FILE" 2>/dev/null; then
-  exit 0
-fi
-
-# build 모드 활성 + 미완료 → iteration 카운터 체크 후 계속 진행 지시
-if grep -q "^mode: build" "$STATE_FILE" 2>/dev/null; then
-
-  # 현재 iteration 읽기 (없으면 0)
-  CURRENT_ITER=$(grep '^iterations:' "$STATE_FILE" 2>/dev/null | awk '{print $2}')
+if [ "$MODE" = "build" ]; then
   CURRENT_ITER=${CURRENT_ITER:-0}
-
-  # max_iter 읽기 (없으면 기본값 10)
-  MAX_ITER=$(grep '^max_iter:' "$STATE_FILE" 2>/dev/null | awk '{print $2}')
+  [[ "$CURRENT_ITER" =~ ^[0-9]+$ ]] || CURRENT_ITER=0
   MAX_ITER=${MAX_ITER:-10}
+  [[ "$MAX_ITER" =~ ^[0-9]+$ ]] || MAX_ITER=10
 
   # max 도달 시 자동 종료
   if [ "$CURRENT_ITER" -ge "$MAX_ITER" ] 2>/dev/null; then
-    echo '{"hookSpecificOutput":{"hookEventName":"Stop","stopDecision":"allow","stopReason":"SQUAD BUILD 최대 반복 횟수('"$MAX_ITER"'회)에 도달했습니다. 자동 종료합니다. 필요 시 /squad:build --max-iter N으로 횟수를 늘려 재시작하세요."}}'
+    jq -cn --arg max "$MAX_ITER" \
+      '{hookSpecificOutput:{hookEventName:"Stop",stopDecision:"allow",stopReason:"SQUAD BUILD 최대 반복 횟수(\($max)회)에 도달했습니다. 자동 종료합니다. 필요 시 /squad:build --max-iter N으로 횟수를 늘려 재시작하세요."}}'
     exit 0
   fi
 
   # iteration 카운터 증가
   NEW_ITER=$((CURRENT_ITER + 1))
-  if grep -q '^iterations:' "$STATE_FILE" 2>/dev/null; then
-    sed -i '' "s/^iterations:.*/iterations: $NEW_ITER/" "$STATE_FILE" 2>/dev/null || \
-    sed -i "s/^iterations:.*/iterations: $NEW_ITER/" "$STATE_FILE" 2>/dev/null
+  if [ -n "$HAS_ITER" ]; then
+    if [[ "$OSTYPE" == darwin* ]]; then
+      sed -i '' "s/^iterations:.*/iterations: $NEW_ITER/" "$STATE_FILE" 2>/dev/null
+    else
+      sed -i "s/^iterations:.*/iterations: $NEW_ITER/" "$STATE_FILE" 2>/dev/null
+    fi
   else
     echo "iterations: $NEW_ITER" >> "$STATE_FILE"
   fi
 
-  echo '{"hookSpecificOutput":{"hookEventName":"Stop","stopDecision":"block","stopReason":"SQUAD BUILD 미완료 (반복 '"$NEW_ITER"'/'"$MAX_ITER"'). 현재 상태를 확인하고 다음 단계를 계속 진행하세요. 상태 파일: '"$STATE_FILE"'"}}'
+  jq -cn --arg iter "$NEW_ITER" --arg max "$MAX_ITER" --arg sf "$STATE_FILE" \
+    '{hookSpecificOutput:{hookEventName:"Stop",stopDecision:"block",stopReason:"SQUAD BUILD 미완료 (반복 \($iter)/\($max)). 현재 상태를 확인하고 다음 단계를 계속 진행하세요. 상태 파일: \($sf)"}}'
   exit 0
 fi
 
