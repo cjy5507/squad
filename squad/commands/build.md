@@ -140,9 +140,17 @@ Phase 2 완료 시 다음 메시지를 출력하고 **구현을 시작하지 않
 
 Stop hook (`build-loop.sh`)이 미완료 시 재실행을 강제합니다.
 
-## 완료
+## 완료 + 임시 파일 정리
+
+성공 시 임시 파일을 삭제합니다 (squad-memory/는 영구 데이터이므로 유지):
+
+```bash
+rm -f .claude/squad-plan.json .claude/squad-explore.md .claude/squad-state.md
+# squad-findings.json은 이 build에서 소비했으면 삭제
+rm -f .claude/squad-findings.json
+```
 
 ```
-.claude/squad-state.md → status: complete
+임시 파일 정리 완료
 최종 리포트 출력
 ```

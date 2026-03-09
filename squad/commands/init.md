@@ -14,11 +14,28 @@ argument-hint: ""
 
 ```
 .claude/squad-memory/
-├── project-profile.md        # 프로젝트 특성
-├── false-positives.md        # 반복 false positive 패턴
-├── agent-effectiveness.md    # 에이전트별 정확도
-└── convention-overrides.md   # 프로젝트 특화 룰 오버라이드
+├── project-profile.md        # 프로젝트 특성 (영구)
+├── agent-effectiveness.md    # 에이전트별 정확도 (영구, 고정 크기)
+├── convention-overrides.md   # 프로젝트 특화 룰 오버라이드 (영구)
+├── false-positives.md        # 반복 false positive 패턴 (영구, stale 정리)
+├── squad-overlooked.md       # 2차 분석에서 발견된 패턴 (영구, stale 정리)
+├── fix-history.jsonl         # 수정 이력 (30일 rotation)
+├── observations.jsonl        # 도구 사용 관찰 (30일 rotation)
+└── learnings.md              # 세션 학습 내용 (최근 10세션 rotation)
 ```
+
+### 데이터 라이프사이클
+
+| 파일 | 증가 방식 | 정리 정책 | 정리 주체 |
+|------|-----------|-----------|-----------|
+| fix-history.jsonl | 수정마다 append | 30일 초과 삭제 | `/squad:compound` |
+| observations.jsonl | 세션마다 append | 30일 초과 삭제 | `/squad:compound` |
+| learnings.md | 세션마다 섹션 추가 | 10세션 초과 삭제 | `/squad:compound` |
+| false-positives.md | 3회 실패 시 추가 | 180일 미참조 시 제안 | `/squad:compound` |
+| agent-effectiveness.md | 점수만 갱신 | 에이전트 수 고정 | 불필요 |
+| convention-overrides.md | 수동/자동 추가 | 사용자 판단 | 수동 |
+
+**`/squad:compound`를 주기적으로 실행하면 자동 정리됩니다.**
 
 ### 2. 프로젝트 스캔
 
@@ -59,11 +76,20 @@ Explore 에이전트로 프로젝트 구조를 스캔하여 `project-profile.md`
 
 **fix-history.jsonl:** 빈 파일 (JSONL 형식, 수정 시 자동 추가)
 
-**session-summary.md:**
-```markdown
-# 세션 히스토리
+**observations.jsonl:** 빈 파일 (JSONL 형식, 도구 사용 관찰 자동 추가)
 
-각 세션의 요약이 PreCompact 훅에 의해 자동 기록됩니다.
+**learnings.md:**
+```markdown
+# 세션 학습 내용
+
+`/squad:compound` 실행 시 자동 기록됩니다.
+```
+
+**squad-overlooked.md:**
+```markdown
+# Squad Overlooked Issues DB
+
+1차 분석에서 놓쳤다가 2차(자기 교정 루프)에서 발견된 패턴을 축적합니다.
 ```
 
 **false-positives.md** 및 **convention-overrides.md**: 빈 템플릿으로 생성. 사용자가 직접 편집하거나 `/squad:reject`로 자동 축적.

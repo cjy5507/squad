@@ -152,3 +152,9 @@ Write 도구로 .claude/squad-findings.json에 저장:
 {minor 항목 수만 표시, 상세는 파일 참조}
 ## 전문가별 점수
 ```
+
+### 파일 라이프사이클
+
+- `.claude/squad-findings.json` — `/squad-fix` 또는 `/squad-build`에서 소비될 때까지 유지. 다음 analyze 실행 시 덮어씌워짐.
+- 소비 후 fix/build의 완료 단계에서 자동 삭제됨.
+- `.claude/squad-memory/`는 영구 학습 데이터이므로 삭제하지 않음.

@@ -127,3 +127,11 @@ findings 전체를 메인 컨텍스트에 출력하지 않습니다. 파일로�
 빌드: PASS/FAIL | 테스트: PASS/FAIL
 리버트 감지: R건 (자동 false positive 등록)
 ```
+
+### 7. 임시 파일 정리
+
+완료 후 소비된 임시 파일을 삭제합니다 (squad-memory/는 영구 데이터이므로 유지):
+
+```bash
+rm -f .claude/squad-findings.json .claude/squad-state.md
+```

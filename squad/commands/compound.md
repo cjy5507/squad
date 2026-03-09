@@ -15,6 +15,34 @@ argument-hint: ""
 
 ## 실행 절차
 
+### Step 0: 데이터 로테이션 (자동 정리)
+
+학습 데이터가 무한히 쌓이는 것을 방지합니다. **매 compound 실행 시 자동 실행.**
+
+**JSONL 파일 (fix-history.jsonl, observations.jsonl):**
+- 최근 30일치만 유지, 이전 데이터 삭제
+```bash
+CUTOFF=$(date -u -v-30d +%Y-%m-%d 2>/dev/null || date -u -d '30 days ago' +%Y-%m-%d)
+for f in fix-history.jsonl observations.jsonl; do
+  [ -f ".claude/squad-memory/$f" ] && \
+  jq -c --arg c "$CUTOFF" 'select(.timestamp >= $c)' ".claude/squad-memory/$f" > "/tmp/$f.tmp" && \
+  mv "/tmp/$f.tmp" ".claude/squad-memory/$f"
+done
+```
+
+**learnings.md:**
+- 최근 10개 세션만 유지 (오래된 `## Session:` 섹션 삭제)
+- 10개 초과 시 가장 오래된 세션부터 삭제
+
+**false-positives.md / squad-overlooked.md:**
+- 90일 이상 미참조 패턴에 `[stale]` 태그 추가
+- 180일 이상이면 삭제 제안 (`compound` 리포트에 표시)
+
+**로테이션 결과 출력:**
+```
+[Rotation] fix-history: 45 → 32 entries | observations: 120 → 87 entries | learnings: 12 → 10 sessions
+```
+
 ### Step 1: 이번 세션 수정 패턴 분석
 
 `fix-history.jsonl`에서 이번 세션 수정 기록 읽기:
