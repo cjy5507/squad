@@ -23,7 +23,7 @@ started: {timestamp}
 
 ### Step 1: Explore
 
-Agent 도구로 code-explorer 에이전트 호출:
+Agent 도구로 code-explorer 에이전트 호출 (`mode: "plan"` — 읽기 전용):
 - 목표: 요청 기능과 관련된 코드 파악
 - 탐색: 관련 파일, 모듈 구조, 의존성, 기존 패턴
 - 결과: 1000자 이내 구조화된 요약 반환
@@ -48,7 +48,7 @@ Agent 도구로 code-explorer 에이전트 호출:
 
 ### Step 3: 접근법 3가지 제시
 
-Agent 도구로 plan-architect 에이전트 호출:
+Agent 도구로 plan-architect 에이전트 호출 (`mode: "plan"` — 읽기 전용):
 - 입력: 기능 설명 + 탐색 요약 + Q&A 답변
 - 출력: 3가지 접근법 비교표
 
@@ -90,7 +90,7 @@ Agent 도구로 plan-architect 에이전트 호출:
 
 ### Step 5: 상세 구현 계획 수립
 
-선택된 안을 기반으로 Agent 도구로 plan-architect 에이전트 재호출:
+선택된 안을 기반으로 Agent 도구로 plan-architect 에이전트 재호출 (`mode: "plan"` — 읽기 전용):
 - 파일별 변경 목록 (라인 수준)
 - 구현 순서 및 의존성
 - 테스트 계획
