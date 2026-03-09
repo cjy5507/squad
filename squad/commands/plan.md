@@ -143,13 +143,19 @@ Agent 도구로 plan-architect 에이전트 호출:
 바로 구현을 시작할까요? (/squad:build로 이어서 진행)
 ```
 
-**사용자 확인 대기** — 확인 시 상태를 `complete`로 업데이트.
+**사용자 확인 대기** — 확인 시 상태를 `plan-ready`로 업데이트.
 
-상태 업데이트: `status: complete`
+상태 업데이트: `status: plan-ready`
 
 ## 완료
 
 ```
-.claude/squad-state.md → status: complete
-/squad:build를 실행하면 계획에 따라 구현을 시작합니다.
+.claude/squad-state.md → status: plan-ready
+/squad:build를 실행하면 Phase 0에서 plan-ready를 감지하여 Phase 3(구현)부터 시작합니다.
 ```
+
+## 읽기 전용 보호
+
+Plan 단계에서는 Claude Code 내장 `plan` mode를 활용합니다.
+Agent 도구 호출 시 `mode: "plan"`을 지정하면 서브에이전트도 읽기 전용으로 동작합니다.
+별도의 guard-plan-mode.sh 훅은 불필요합니다.

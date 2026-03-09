@@ -12,6 +12,7 @@ WORKTREES=$(git worktree list --porcelain 2>/dev/null | awk '/^worktree .*\.squa
 
 while IFS= read -r WT_PATH; do
   [ -z "$WT_PATH" ] && continue
+  DIRTY="" BACKUP=""
 
   # uncommitted 변경사항 확인
   if [ -d "$WT_PATH" ]; then

@@ -12,6 +12,7 @@ argument-hint: "<task-description> [--max-iter N] [--worktree]"
 
 - `--max-iter N` — 최대 반복 횟수 지정 (기본값: 10). 이 횟수에 도달하면 build-loop이 자동 종료됩니다.
 - `--worktree` — Git worktree 격리 실행. 완료 후 diff 표시 + 메인 브랜치 적용 확인.
+- `--now` — Phase 2 완료 후 세션 분리 없이 바로 Phase 3으로 진행.
 
 ## Worktree 격리 (--worktree 옵션 시)
 
@@ -63,12 +64,12 @@ max_iter: {N | 10}
 
 ## Phase 1: Explore
 
-Agent 도구로 code-explorer 에이전트를 호출합니다:
+Agent 도구로 code-explorer 에이전트를 호출합니다 (`mode: "plan"` — 읽기 전용):
 - 작업: {task-description}
 - 파악할 것: 관련 파일, 구조, 의존성, 수정 범위
 - **결과를 `.claude/squad-explore.md`에 저장** (1000자 이내 요약)
 - 메인 컨텍스트에는 "탐색 완료: N개 파일, 요약은 .claude/squad-explore.md" 1줄만 유지
-- 이 단계에서는 소스 코드를 수정하지 않습니다
+- 이 단계에서는 소스 코드를 수정하지 않습니다 (plan mode가 자동 차단)
 
 ## Phase 2: Plan
 
