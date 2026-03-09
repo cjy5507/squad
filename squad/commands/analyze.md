@@ -94,7 +94,7 @@ Tier 3 (Project): ClaudeMdChecker
 - `references/json-contract.md`의 출력 형식
 - "분석만 수행하고 코드를 수정하지 마세요" 지시
 
-guard-plan-mode.sh 훅이 analyze 모드에서 Edit/Write를 차단합니다.
+Agent 호출 시 `mode: "plan"`을 지정하여 읽기 전용으로 실행합니다.
 
 ### 4. 결과 통합
 

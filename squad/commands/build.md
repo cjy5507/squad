@@ -45,10 +45,12 @@ max_iter: {N | 10}
 
 **이 단계가 가장 먼저 실행됩니다.**
 
-기존 파일 존재 여부로 이전 세션에서 어디까지 진행했는지 판단합니다:
+기존 파일 존재 여부와 상태값으로 이전 세션에서 어디까지 진행했는지 판단합니다:
 
 ```
 1. .claude/squad-plan.json 존재 → Phase 3 (Implement)부터 시작
+   - squad-state.md에 status: plan-ready가 있으면: "[Squad Build] plan-ready 감지 — 검증된 계획으로 구현 시작"
+   - 없으면: "[Squad Build] 계획 파일 감지 — Phase 3부터 재개"
 2. .claude/squad-explore.md 존재 + plan.json 없음 → Phase 2 (Plan)부터 시작
 3. .claude/squad-findings.json 존재 + 위 없음 → Phase 2부터 시작 (분석 결과 활용)
 4. 아무것도 없음 → Phase 1 (Explore)부터 시작
@@ -121,17 +123,37 @@ Phase 2 완료 시 다음 메시지를 출력하고 **구현을 시작하지 않
    - 이전 수정과 동일한 `old_string`/`new_string` 반복 금지
 4. 동일 패턴 **3회 이상** 실패 → `false-positives.md` 등록 + 구현 대상에서 제외
 
-## Phase 3: Implement
+## Phase 3: Implement (병렬 그룹 지원)
 
 **이 단계는 반드시 Agent 도구(서브에이전트)로 격리 실행합니다.**
 
+### 병렬 실행 전략
+
+`squad-plan.json`에 `groups` 필드가 있으면 의존성 그래프에 따라 병렬 실행합니다:
+
+```
+1. groups에서 depends_on: [] 인 독립 그룹들을 식별
+2. 독립 그룹들을 각각 별도 Agent 도구로 동시 호출 (run_in_background: true)
+3. 독립 그룹 완료 후, depends_on이 충족된 다음 그룹들을 병렬 호출
+4. 모든 그룹 완료까지 반복
+```
+
+**그룹이 1개이거나 groups 필드가 없으면** 단일 에이전트 순차 실행 (기존 방식).
+
+### 각 구현 에이전트 지시
+
 구현 에이전트는 깨끗한 컨텍스트에서 시작하여 파일만 읽고 작업합니다:
-- `.claude/squad-plan.json`을 읽어서 모든 변경사항을 실행 (Phase 2.5에서 필터링된 항목 제외)
+- `.claude/squad-plan.json`에서 자신의 그룹에 해당하는 변경사항만 실행
 - 수정 규칙: 심각도순, 라인역순, old_string 검증
 - **각 변경사항 적용 전** `.claude/squad-state.md`에 `agent:`, `severity:`, `title:` 필드를 업데이트 (track-fix.sh 이력 추적용)
 - 완료 후 적용/스킵/실패 건수만 반환
 
-메인 컨텍스트에는 구현 결과 요약(적용/스킵/실패 건수)만 유지합니다.
+### 병렬 충돌 방지
+
+- 동일 파일이 여러 그룹에 포함된 경우: plan.md에서 반드시 같은 그룹으로 묶어야 함 (Step 5에서 plan-architect가 보장)
+- 그룹 간 파일 중복 감지: Phase 3 시작 시 검증, 중복 발견 시 순차 실행으로 폴백
+
+메인 컨텍스트에는 구현 결과 요약(그룹별 적용/스킵/실패 건수)만 유지합니다.
 
 ## Phase 4: Verify
 
